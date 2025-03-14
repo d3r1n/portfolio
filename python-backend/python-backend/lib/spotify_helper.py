@@ -7,6 +7,13 @@ import base64
 from config_helper import Config
 config = Config()
 
+class SpotifyError(Exception):
+    """
+    Base class for exceptions raised by spotify_helper module
+    """
+    def __init__(self, *args):
+        super().__init__(*args)
+
 class Track(BaseModel):
     """
     Dataclass representing the a track returned from the spotify api.
@@ -69,6 +76,9 @@ class SpotifyHelper():
 
         Args:
             session (ClientSession): An aiohttp client session to make HTTP requests.
+
+        Raises:
+            SpotifyError: if response status code is anything except `200 (OK)`
         """
 
         # check if current token is expired before requesting a new access token
@@ -91,20 +101,24 @@ class SpotifyHelper():
             "refresh_token": self._REFRESH_TOKEN,
         }
 
-        request = await session.post(url, headers=headers, data=payload)
-        if request.status == 200:
-            json_data = await request.json()
-            self._access_token = json_data["access_token"]
+        response = await session.post(url, headers=headers, data=payload)
 
-            # set the expiry to current time + spotify's expires_in
-            current_time = datetime.now()
-            self._expiry_time = current_time + timedelta(seconds=json_data["expires_in"])
-        else:
-            #TODO: proper error handling
-            print("Error access token")
+        # Error handling
+        if response.status != 200:
+            raise SpotifyError({
+                "status_code": response.status,
+                "error_message": await response.text()
+            })
 
+        json_data = await response.json()
+        self._access_token = json_data["access_token"]
 
-    async def get_currently_playing(self, session: ClientSession) -> Track:
+        # set the expiry to current time + spotify's expires_in
+        current_time = datetime.now()
+        self._expiry_time = current_time + timedelta(seconds=json_data["expires_in"])
+        
+
+    async def get_currently_playing(self, session: ClientSession) -> Track | None:
         """
         Retrieves the currently playing track on the user's Spotify account.
 
@@ -113,6 +127,11 @@ class SpotifyHelper():
 
         Returns:
             Track: The currently playing track details.
+
+            None: when there's nothing playing
+
+        Raises:
+            SpotifyError: if response status code is anything except `200 (OK)`
         """
 
         # refresh access token
@@ -126,27 +145,35 @@ class SpotifyHelper():
 
         response = await session.get(url, headers=headers)
 
+        # if status code is not 200 or 204 raise exception       
+        if response.status not in [200, 204]:
+            raise SpotifyError({
+                "status_code": response.status,
+                "error_message": await response.text()
+            })
+        
+        # 204 (No Content), request was successful but there's no content to be returned
+        elif response.status == 204:
+            return None
+        
         # lambda to be used with map to get only the artist name
         format_artists = lambda artist: artist["name"]
+        
+        json_data = await response.json()
 
-        if response.status == 200:
-            json_data = await response.json()
+        currently_playing = Track(
+            name=json_data["item"]["name"],
+            is_playing=json_data["is_playing"],
+            progress_ms=json_data["progress_ms"],
+            duration_ms=json_data["item"]["duration_ms"],
+            album_name=json_data["item"]["album"]["name"],
+            album_image=json_data["item"]["album"]["images"][0]["url"],
+            artists= map(format_artists, json_data["item"]["artists"]),
+            track_url=f"https://open.spotify.com/track/{json_data["item"]["uri"].split(":")[2]}"
+        )
 
-            currently_playing = Track(
-                name=json_data["item"]["name"],
-                is_playing=json_data["is_playing"],
-                progress_ms=json_data["progress_ms"],
-                duration_ms=json_data["item"]["duration_ms"],
-                album_name=json_data["item"]["album"]["name"],
-                album_image=json_data["item"]["album"]["images"][0]["url"],
-                artists= map(format_artists, json_data["item"]["artists"]),
-                track_url=f"https://open.spotify.com/track/{json_data["item"]["uri"].split(":")[2]}"
-            )
-
-            return currently_playing
-        else:
-            #TODO: proper error handling
-            print("Error", await response.text())
+        return currently_playing
+        
 
     async def get_last_played_track(session: ClientSession) -> Track:
         pass
