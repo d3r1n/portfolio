@@ -7,7 +7,13 @@ import base64
 from config_helper import Config
 config = Config()
 
-class CurrentlyPlaying(BaseModel):
+class Track(BaseModel):
+    """
+    Dataclass representing the a track returned from the spotify api.
+
+    Most of the data from the original response isn't included here since
+    we're only interested in data our application actually requires.
+    """
     name:           str
     artists:        list[str]
     track_url:      HttpUrl
@@ -18,22 +24,38 @@ class CurrentlyPlaying(BaseModel):
     album_image:    HttpUrl
 
 class TopArtist(BaseModel):
+    """
+    Dataclass representing an artist returned from the spotify's top artists response
+    """
     name:   str
     url:    HttpUrl
     image:  HttpUrl
 
 class TopTrack(BaseModel):
+    """
+    Dataclass representing a track returned from the spotify's top tracks response
+    """
     name:           str
     url:            HttpUrl
     artists:        list[str]
     album_image:    HttpUrl
 
 class SpotifyHelper():
+    """
+    A helper class to interact with the Spotify API.
+
+    Functionality of this class is as follows, refreshing/creating access tokens, fetching the currently playing track,
+    fetching the last played track (to be used if there's no currently playing track),
+    fetching the top artists of the month, fetching the top tracks of the month.
+    """
 
     BASE_URL: str = "https://api.spotify.com/v1"
     AUTH_URL: str = "https://accounts.spotify.com/api"
 
     def __init__(self):
+        """
+        Initializes the SpotifyHelper instance by loading client credentials and setting access token properties.
+        """
         self._CLIENT_ID: str = config["spotify"]["client_id"]
         self._CLIENT_SECRET: str = config["spotify"]["client_secret"]
         self._REFRESH_TOKEN: str = config["spotify"]["refresh_token"]
@@ -42,8 +64,14 @@ class SpotifyHelper():
         self._expiry_time: datetime = None
 
     async def _refresh_access_token(self, session: ClientSession):
-        # check if current token is expired
-        # before requesting a new access token
+        """
+        Refreshes the Spotify access token if it has expired.
+
+        Args:
+            session (ClientSession): An aiohttp client session to make HTTP requests.
+        """
+
+        # check if current token is expired before requesting a new access token
         # so we don't waste a token thats still valid
         now = datetime.now()
         if (self._expiry_time and now <= self._expiry_time):
@@ -76,7 +104,17 @@ class SpotifyHelper():
             print("Error access token")
 
 
-    async def get_currently_playing(self, session: ClientSession) -> CurrentlyPlaying:
+    async def get_currently_playing(self, session: ClientSession) -> Track:
+        """
+        Retrieves the currently playing track on the user's Spotify account.
+
+        Args:
+            session (ClientSession): An aiohttp client session to make HTTP requests.
+
+        Returns:
+            Track: The currently playing track details.
+        """
+
         # refresh access token
         await self._refresh_access_token(session)
 
@@ -94,7 +132,7 @@ class SpotifyHelper():
         if response.status == 200:
             json_data = await response.json()
 
-            currently_playing = CurrentlyPlaying(
+            currently_playing = Track(
                 name=json_data["item"]["name"],
                 is_playing=json_data["is_playing"],
                 progress_ms=json_data["progress_ms"],
@@ -109,6 +147,9 @@ class SpotifyHelper():
         else:
             #TODO: proper error handling
             print("Error", await response.text())
+
+    async def get_last_played_track(session: ClientSession) -> Track:
+        pass
 
     def get_top_month_artist():
         pass
