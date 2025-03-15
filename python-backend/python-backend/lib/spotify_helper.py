@@ -1,7 +1,10 @@
 from aiohttp import ClientSession
-from pydantic import BaseModel, HttpUrl
-from datetime import datetime, timedelta
 import asyncio
+
+from pydantic import BaseModel, Field, HttpUrl, validate_call, ConfigDict
+from typing import Any, Self, Annotated
+
+from datetime import datetime, timedelta
 import base64
 
 from config_helper import Config
@@ -24,11 +27,11 @@ class Track(BaseModel):
     name:           str
     artists:        list[str]
     track_url:      HttpUrl
-    is_playing:     bool
+    is_playing:     bool | None   = Field(default=None)
     album_name:     str
-    duration_ms:    int
-    progress_ms:    int
     album_image:    HttpUrl
+    duration_ms:    int | None    = Field(default=None)
+    progress_ms:    int | None    = Field(default=None)
 
 class TopArtist(BaseModel):
     """
@@ -37,15 +40,6 @@ class TopArtist(BaseModel):
     name:   str
     url:    HttpUrl
     image:  HttpUrl
-
-class TopTrack(BaseModel):
-    """
-    Dataclass representing a track returned from the spotify's top tracks response
-    """
-    name:           str
-    url:            HttpUrl
-    artists:        list[str]
-    album_image:    HttpUrl
 
 class SpotifyHelper():
     """
@@ -70,6 +64,7 @@ class SpotifyHelper():
         self._access_token: str = None
         self._expiry_time: datetime = None
 
+    @validate_call(config= ConfigDict(arbitrary_types_allowed=True))
     async def _refresh_access_token(self, session: ClientSession):
         """
         Refreshes the Spotify access token if it has expired.
@@ -117,13 +112,13 @@ class SpotifyHelper():
         current_time = datetime.now()
         self._expiry_time = current_time + timedelta(seconds=json_data["expires_in"])
         
-
+    @validate_call(config= ConfigDict(arbitrary_types_allowed=True))
     async def get_currently_playing(self, session: ClientSession) -> Track | None:
         """
-        Retrieves the currently playing track on the user's Spotify account.
+        Retrieves the user's currently playing track.
 
         Args:
-            session (ClientSession): An aiohttp client session to make HTTP requests.
+            session (ClientSession): aiohttp client session to make HTTP requests.
 
         Returns:
             Track: The currently playing track details.
@@ -134,7 +129,6 @@ class SpotifyHelper():
             SpotifyError: if response status code is anything except `200 (OK)`
         """
 
-        # refresh access token
         await self._refresh_access_token(session)
 
         url = self.BASE_URL + "/me/player/currently-playing"
@@ -173,21 +167,186 @@ class SpotifyHelper():
         )
 
         return currently_playing
+    
+    @validate_call(config= ConfigDict(arbitrary_types_allowed=True))
+    async def get_last_played_track(self, session: ClientSession) -> Track | None:
+        """
+        Retrieves the user's last played track
+
+        Args:
+            session (ClientSession): aiohttps session to make HTTP requests.
+
+        Returns:
+            Track: last played track details. this Track object doesn't include duration, progress, and play/resume data
+
+            None: if there's no last played track (if status code is `204 (No Content)`)
+
+        Raises:
+            SpotifyError: if response status code is anything except `200 (OK)`
+        """
+
+        await self._refresh_access_token(session)
+
+        url = self.BASE_URL + "/me/player/recently-played"
+
+        url_params = {
+            "limit": 5
+        }
+
+        headers = {
+            "Authorization": f"Bearer {self._access_token}"
+        }
+
+        response = await session.get(url, headers=headers, params=url_params)
+
+        if response.status not in [204, 200]:
+            raise SpotifyError({
+                "status_code": response.status,
+                "error_message": await response.text()
+            })
+        elif response.status == 204: # 204 (No Content)
+            return None
         
+        json_data = await response.json()
+        
+        track0 = json_data["items"][0]["track"]
 
-    async def get_last_played_track(session: ClientSession) -> Track:
-        pass
+        # lambda to be used with map to get only the artist name
+        format_artists = lambda artist: artist["name"]
 
-    def get_top_month_artist():
-        pass
+        last_played_track = Track(
+            name=track0["name"],
+            album_name=track0["album"]["name"],
+            album_image=track0["album"]["images"][0]["url"],
+            artists= map(format_artists, track0["artists"]),
+            track_url=f"https://open.spotify.com/track/{track0["uri"].split(":")[2]}",
+        )
 
-    def get_top_month_songs():
-        pass
+        return last_played_track
 
-async def test():
-    async with ClientSession() as session:
-        s = SpotifyHelper()
-        curr = await s.get_currently_playing(session)
-        print(curr)
+    @validate_call(config= ConfigDict(arbitrary_types_allowed=True))
+    async def get_top_month_tracks(self, 
+                session: ClientSession,
+                *, # pydantic keyword only
+                limit: Annotated[int, Field(default=10, ge=1, le=50)]
+            ) -> list[Track] | None:
+        """
+        Retrieves user's top tracks of the last 4 weeks
 
-asyncio.run(test())
+        Args:
+            session (ClientSession): aiohttp client session to make HTTP requests
+
+            limit (int): the limit lenght of the tracks returned. limit must be: >= 1 and <= 50. Default: 10
+
+        Returns:
+            list[Track]: list of user's top tracks
+
+            None: if nothing is found for top tracks (if statu code is `204 (No Content)`)
+
+        Raises:
+            SpotifyError: if response status code is anything except `200 (OK)`
+        """
+
+        await self._refresh_access_token(session)
+
+        url = self.BASE_URL + "/me/top/tracks"
+
+        url_params = {
+            "limit": limit,
+            "time_range": "short_term" # 4 weeks
+        }
+
+        headers = {
+            "Authorization": f"Bearer {self._access_token}"
+        }
+
+        response = await session.get(url, params=url_params, headers=headers)
+        
+        if response.status not in [204, 200]:
+            raise SpotifyError({
+                "status_code": response.status,
+                "error_message": await response.text()
+            })
+        elif response.status == 204: # 204 (No Content)
+            return None
+        
+        data_items = (await response.json())['items']
+
+        tracks: list[Track] = []
+
+        # lambda to be used with map to get only the artist name
+        format_artists = lambda artist: artist["name"]
+        
+        for track_data in data_items:
+            track = Track(
+                name=track_data["name"],
+                album_name=track_data["album"]["name"],
+                album_image=track_data["album"]["images"][0]["url"],
+                artists= map(format_artists, track_data["artists"]),
+                track_url=f"https://open.spotify.com/track/{track_data["uri"].split(":")[2]}",
+            )
+
+            tracks.append(track)
+
+        return tracks
+    
+    @validate_call(config= ConfigDict(arbitrary_types_allowed=True))
+    async def get_top_month_artists(self, 
+                session: ClientSession,
+                *, # pydantic keyword only
+                limit: Annotated[int, Field(default=10, ge=1, le=50)]
+            ) -> list[TopArtist] | None:
+        """
+        Retrieves user's top artists of the last 4 weeks
+
+        Args:
+            session (ClientSession): aiohttp client session to make HTTP requests
+
+            limit (int): the limit length of the artists returned. limit must be: >= 1 and <= 50. Default: 10
+
+        Returns:
+            list[TopArtist]: list of user's top artists
+
+            None: if nothing is found for top artists (if status code is `204 (No Content)`)
+
+        Raises:
+            SpotifyError: if response status code is anything except `200 (OK)`
+        """
+
+        await self._refresh_access_token(session)
+
+        url = self.BASE_URL + "/me/top/artists"
+
+        url_params = {
+            "limit": limit,
+            "time_range": "short_term" # 4 weeks
+        }
+
+        headers = {
+            "Authorization": f"Bearer {self._access_token}"
+        }
+
+        response = await session.get(url, params=url_params, headers=headers)
+        
+        if response.status not in [204, 200]:
+            raise SpotifyError({
+                "status_code": response.status,
+                "error_message": await response.text()
+            })
+        elif response.status == 204: # 204 (No Content)
+            return None
+        
+        data_items = (await response.json())['items']
+
+        artists: list[TopArtist] = []
+
+        for data in data_items:
+            artist = TopArtist(
+                name=data["name"],
+                url=f"https://open.spotify.com/artist/{data["uri"].split(":")[2]}",
+                image=data["images"][0]["url"]
+            )
+
+            artists.append(artist)
+
+        return artists 
