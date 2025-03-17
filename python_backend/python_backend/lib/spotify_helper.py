@@ -1,13 +1,11 @@
 from aiohttp import ClientSession
-import asyncio
-
 from pydantic import BaseModel, Field, HttpUrl, validate_call, ConfigDict
-from typing import Any, Self, Annotated
+from typing import Annotated
 
 from datetime import datetime, timedelta
 import base64
 
-from config_helper import Config
+from .config_helper import Config
 config = Config()
 
 class SpotifyError(Exception):
@@ -53,7 +51,7 @@ class SpotifyHelper():
     BASE_URL: str = "https://api.spotify.com/v1"
     AUTH_URL: str = "https://accounts.spotify.com/api"
 
-    def __init__(self):
+    def __init__(self, session: ClientSession):
         """
         Initializes the SpotifyHelper instance by loading client credentials and setting access token properties.
         """
@@ -63,9 +61,10 @@ class SpotifyHelper():
 
         self._access_token: str = None
         self._expiry_time: datetime = None
+        self.session = session
 
-    @validate_call(config= ConfigDict(arbitrary_types_allowed=True))
-    async def _refresh_access_token(self, session: ClientSession):
+    #@validate_call(config= ConfigDict(arbitrary_types_allowed=True))
+    async def _refresh_access_token(self):
         """
         Refreshes the Spotify access token if it has expired.
 
@@ -96,7 +95,7 @@ class SpotifyHelper():
             "refresh_token": self._REFRESH_TOKEN,
         }
 
-        response = await session.post(url, headers=headers, data=payload)
+        response = await self.session.post(url, headers=headers, data=payload)
 
         # Error handling
         if response.status != 200:
@@ -113,12 +112,12 @@ class SpotifyHelper():
         self._expiry_time = current_time + timedelta(seconds=json_data["expires_in"])
         
     @validate_call(config= ConfigDict(arbitrary_types_allowed=True))
-    async def get_currently_playing(self, session: ClientSession) -> Track | None:
+    async def get_currently_playing(self) -> Track | None:
         """
         Retrieves the user's currently playing track.
 
         Args:
-            session (ClientSession): aiohttp client session to make HTTP requests.
+            self.session.(Clientself.session.: aiohttp client self.session.to make HTTP requests.
 
         Returns:
             Track: The currently playing track details.
@@ -129,7 +128,7 @@ class SpotifyHelper():
             SpotifyError: if response status code is anything except `200 (OK)`
         """
 
-        await self._refresh_access_token(session)
+        await self._refresh_access_token()
 
         url = self.BASE_URL + "/me/player/currently-playing"
 
@@ -137,7 +136,7 @@ class SpotifyHelper():
             "Authorization": f"Bearer {self._access_token}"
         }
 
-        response = await session.get(url, headers=headers)
+        response = await self.session.get(url, headers=headers)
 
         # if status code is not 200 or 204 raise exception       
         if response.status not in [200, 204]:
@@ -169,12 +168,12 @@ class SpotifyHelper():
         return currently_playing
     
     @validate_call(config= ConfigDict(arbitrary_types_allowed=True))
-    async def get_last_played_track(self, session: ClientSession) -> Track | None:
+    async def get_last_played_track(self) -> Track | None:
         """
         Retrieves the user's last played track
 
         Args:
-            session (ClientSession): aiohttps session to make HTTP requests.
+            self.session.(Clientself.session.: aiohttps self.session.to make HTTP requests.
 
         Returns:
             Track: last played track details. this Track object doesn't include duration, progress, and play/resume data
@@ -185,7 +184,7 @@ class SpotifyHelper():
             SpotifyError: if response status code is anything except `200 (OK)`
         """
 
-        await self._refresh_access_token(session)
+        await self._refresh_access_token()
 
         url = self.BASE_URL + "/me/player/recently-played"
 
@@ -197,7 +196,7 @@ class SpotifyHelper():
             "Authorization": f"Bearer {self._access_token}"
         }
 
-        response = await session.get(url, headers=headers, params=url_params)
+        response = await self.session.get(url, headers=headers, params=url_params)
 
         if response.status not in [204, 200]:
             raise SpotifyError({
@@ -225,8 +224,8 @@ class SpotifyHelper():
         return last_played_track
 
     @validate_call(config= ConfigDict(arbitrary_types_allowed=True))
-    async def get_top_month_tracks(self, 
-                session: ClientSession,
+    async def get_top_month_tracks(
+                self, 
                 *, # pydantic keyword only
                 limit: Annotated[int, Field(default=10, ge=1, le=50)]
             ) -> list[Track] | None:
@@ -234,7 +233,7 @@ class SpotifyHelper():
         Retrieves user's top tracks of the last 4 weeks
 
         Args:
-            session (ClientSession): aiohttp client session to make HTTP requests
+            self.session.(Clientself.session.: aiohttp client self.session.to make HTTP requests
 
             limit (int): the limit lenght of the tracks returned. limit must be: >= 1 and <= 50. Default: 10
 
@@ -247,7 +246,7 @@ class SpotifyHelper():
             SpotifyError: if response status code is anything except `200 (OK)`
         """
 
-        await self._refresh_access_token(session)
+        await self._refresh_access_token()
 
         url = self.BASE_URL + "/me/top/tracks"
 
@@ -260,7 +259,7 @@ class SpotifyHelper():
             "Authorization": f"Bearer {self._access_token}"
         }
 
-        response = await session.get(url, params=url_params, headers=headers)
+        response = await self.session.get(url, params=url_params, headers=headers)
         
         if response.status not in [204, 200]:
             raise SpotifyError({
@@ -291,8 +290,8 @@ class SpotifyHelper():
         return tracks
     
     @validate_call(config= ConfigDict(arbitrary_types_allowed=True))
-    async def get_top_month_artists(self, 
-                session: ClientSession,
+    async def get_top_month_artists(
+                self,
                 *, # pydantic keyword only
                 limit: Annotated[int, Field(default=10, ge=1, le=50)]
             ) -> list[TopArtist] | None:
@@ -300,7 +299,7 @@ class SpotifyHelper():
         Retrieves user's top artists of the last 4 weeks
 
         Args:
-            session (ClientSession): aiohttp client session to make HTTP requests
+            self.session.(Clientself.session.: aiohttp client self.session.to make HTTP requests
 
             limit (int): the limit length of the artists returned. limit must be: >= 1 and <= 50. Default: 10
 
@@ -313,7 +312,7 @@ class SpotifyHelper():
             SpotifyError: if response status code is anything except `200 (OK)`
         """
 
-        await self._refresh_access_token(session)
+        await self._refresh_access_token()
 
         url = self.BASE_URL + "/me/top/artists"
 
@@ -326,7 +325,7 @@ class SpotifyHelper():
             "Authorization": f"Bearer {self._access_token}"
         }
 
-        response = await session.get(url, params=url_params, headers=headers)
+        response = await self.session.get(url, params=url_params, headers=headers)
         
         if response.status not in [204, 200]:
             raise SpotifyError({
