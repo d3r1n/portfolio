@@ -54,6 +54,10 @@ class SpotifyHelper():
     def __init__(self, session: ClientSession):
         """
         Initializes the SpotifyHelper instance by loading client credentials and setting access token properties.
+
+        # Parameters
+            **session** (*ClientSession*): an aiohttp ClientSession to make the requests
+
         """
         self._CLIENT_ID: str = config["spotify"]["client_id"]
         self._CLIENT_SECRET: str = config["spotify"]["client_secret"]
@@ -67,12 +71,9 @@ class SpotifyHelper():
     async def _refresh_access_token(self):
         """
         Refreshes the Spotify access token if it has expired.
-
-        Args:
-            session (ClientSession): An aiohttp client session to make HTTP requests.
-
-        Raises:
-            SpotifyError: if response status code is anything except `200 (OK)`
+        
+        # Raises
+            **SpotifyError**: if response status code is anything except `200 (OK)`
         """
 
         # check if current token is expired before requesting a new access token
@@ -101,7 +102,7 @@ class SpotifyHelper():
         if response.status != 200:
             raise SpotifyError({
                 "status_code": response.status,
-                "error_message": await response.text()
+                "message": await response.text()
             })
 
         json_data = await response.json()
@@ -116,16 +117,13 @@ class SpotifyHelper():
         """
         Retrieves the user's currently playing track.
 
-        Args:
-            self.session.(Clientself.session.: aiohttp client self.session.to make HTTP requests.
+        # Returns
+            **Track**: The currently playing track details.
 
-        Returns:
-            Track: The currently playing track details.
+            **None**: when there's nothing playing
 
-            None: when there's nothing playing
-
-        Raises:
-            SpotifyError: if response status code is anything except `200 (OK)`
+        # Raises
+            **SpotifyError**: if response status code is anything except `200 (OK)`
         """
 
         await self._refresh_access_token()
@@ -142,7 +140,7 @@ class SpotifyHelper():
         if response.status not in [200, 204]:
             raise SpotifyError({
                 "status_code": response.status,
-                "error_message": await response.text()
+                "message": await response.text()
             })
         
         # 204 (No Content), request was successful but there's no content to be returned
@@ -172,16 +170,13 @@ class SpotifyHelper():
         """
         Retrieves the user's last played track
 
-        Args:
-            self.session.(Clientself.session.: aiohttps self.session.to make HTTP requests.
+        # Returns
+            **Track**: last played track details. this Track object doesn't include duration, progress, and play/resume data
 
-        Returns:
-            Track: last played track details. this Track object doesn't include duration, progress, and play/resume data
+            **None**: if there's no last played track (if status code is `204 (No Content)`)
 
-            None: if there's no last played track (if status code is `204 (No Content)`)
-
-        Raises:
-            SpotifyError: if response status code is anything except `200 (OK)`
+        # Raises
+            **SpotifyError**: if response status code is anything except `200 (OK)`
         """
 
         await self._refresh_access_token()
@@ -201,7 +196,7 @@ class SpotifyHelper():
         if response.status not in [204, 200]:
             raise SpotifyError({
                 "status_code": response.status,
-                "error_message": await response.text()
+                "message": await response.text()
             })
         elif response.status == 204: # 204 (No Content)
             return None
@@ -232,18 +227,16 @@ class SpotifyHelper():
         """
         Retrieves user's top tracks of the last 4 weeks
 
-        Args:
-            self.session.(Clientself.session.: aiohttp client self.session.to make HTTP requests
+        # Parameters 
+            **limit** (*int*): the limit lenght of the tracks returned. 1 <= limit <= 50, Default: 50
 
-            limit (int): the limit lenght of the tracks returned. limit must be: >= 1 and <= 50. Default: 10
+        # Returns
+            **list[Track]**: list of user's top tracks
 
-        Returns:
-            list[Track]: list of user's top tracks
+            **None**: if nothing is found for top tracks *(if status code is `204 (No Content)`)*
 
-            None: if nothing is found for top tracks (if statu code is `204 (No Content)`)
-
-        Raises:
-            SpotifyError: if response status code is anything except `200 (OK)`
+        # Raises
+            **SpotifyError**: if response status code is anything except `200 (OK)`
         """
 
         await self._refresh_access_token()
@@ -264,7 +257,7 @@ class SpotifyHelper():
         if response.status not in [204, 200]:
             raise SpotifyError({
                 "status_code": response.status,
-                "error_message": await response.text()
+                "message": await response.text()
             })
         elif response.status == 204: # 204 (No Content)
             return None
@@ -298,18 +291,16 @@ class SpotifyHelper():
         """
         Retrieves user's top artists of the last 4 weeks
 
-        Args:
-            self.session.(Clientself.session.: aiohttp client self.session.to make HTTP requests
+        # Parameters
+            **limit** (*int*): the limit length of the artists returned. 1 <= limit <= 50, Default: 50
 
-            limit (int): the limit length of the artists returned. limit must be: >= 1 and <= 50. Default: 10
+        # Returns
+            **list[TopArtist]**: list of user's top artists
 
-        Returns:
-            list[TopArtist]: list of user's top artists
+            **None**: if nothing is found for top artists *(if status code is `204 (No Content)`)*
 
-            None: if nothing is found for top artists (if status code is `204 (No Content)`)
-
-        Raises:
-            SpotifyError: if response status code is anything except `200 (OK)`
+        # Raises
+            **SpotifyError**: if response status code is anything except `200 (OK)`
         """
 
         await self._refresh_access_token()
@@ -330,7 +321,7 @@ class SpotifyHelper():
         if response.status not in [204, 200]:
             raise SpotifyError({
                 "status_code": response.status,
-                "error_message": await response.text()
+                "message": await response.text()
             })
         elif response.status == 204: # 204 (No Content)
             return None
