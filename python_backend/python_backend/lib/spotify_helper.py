@@ -39,6 +39,9 @@ class TopArtist(BaseModel):
     url:    HttpUrl
     image:  HttpUrl
 
+# lambda to be used with map to get only the artist name
+format_artists = lambda artist: artist["name"]
+
 class SpotifyHelper():
     """
     A helper class to interact with the Spotify API.
@@ -147,9 +150,6 @@ class SpotifyHelper():
         elif response.status == 204:
             return None
         
-        # lambda to be used with map to get only the artist name
-        format_artists = lambda artist: artist["name"]
-        
         json_data = await response.json()
 
         currently_playing = Track(
@@ -204,9 +204,6 @@ class SpotifyHelper():
         json_data = await response.json()
         
         track0 = json_data["items"][0]["track"]
-
-        # lambda to be used with map to get only the artist name
-        format_artists = lambda artist: artist["name"]
 
         last_played_track = Track(
             name=track0["name"],
@@ -266,9 +263,6 @@ class SpotifyHelper():
 
         tracks: list[Track] = []
 
-        # lambda to be used with map to get only the artist name
-        format_artists = lambda artist: artist["name"]
-        
         for track_data in data_items:
             track = Track(
                 name=track_data["name"],
