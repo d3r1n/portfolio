@@ -1,7 +1,5 @@
-from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from fastapi.responses import JSONResponse
-import aiohttp
 
 from python_backend.routers import spotify
 

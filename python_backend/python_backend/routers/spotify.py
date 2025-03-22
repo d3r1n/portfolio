@@ -3,13 +3,12 @@ from fastapi.responses import JSONResponse, Response
 from typing import Optional, Literal
 from pydantic import BaseModel
 
-
 from aiohttp import ClientSession
 from contextlib import asynccontextmanager
 
 from python_backend.lib.spotify_helper import SpotifyHelper, SpotifyError, Track, TopArtist
 
-
+# Set to None to be declared when the lifecycle of the route starts
 spotify_helper: Optional[SpotifyHelper] = None
 client_session: Optional[ClientSession] = None
 
@@ -75,7 +74,7 @@ async def currently_playing() -> Optional[Track]:
 @router.get("/last-played", responses=spotify_error_response)
 async def last_played() -> Optional[Track]:
     """Get the last played track from user's spotify"""
-    
+
     if spotify_helper:
         try:
             track = await spotify_helper.get_last_played_track()
