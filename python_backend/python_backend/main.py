@@ -7,12 +7,8 @@ app = FastAPI()
 
 app.include_router(spotify.router)
 
+
 @app.get("/healthcheck")
 async def healthcheck():
     # TODO: implement proper healthcheck
-    return JSONResponse(
-        {
-            "condition": "UP"
-        },
-        status_code=200
-    )
+    return JSONResponse({"condition": "UP"}, status_code=200)

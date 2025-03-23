@@ -12,20 +12,21 @@ except KeyError:
 
 
 class Config(object):
-    """ Project configurations as singleton class.
+    """Project configurations as singleton class.
 
     This class is used to access all configuration inside our `config.[mode].toml` files.
-    
+
     Changing the configuration mode:
         To change which file is used for the configuration mode you need to change the
         `DEPLOYMENT_MODE` environment variable. The variable is set to `DEV` by default.
 
         Available options for the variable are: `PROD`, `DEV`
-        
+
         - PROD: uses the `config.prod.toml` file for configuration
         - DEV: uses the `config.dev.toml` file for configuration
-    """   
-    _instance: Self | None = None # set the instance to None when created
+    """
+
+    _instance: Self | None = None  # set the instance to None when created
 
     def __new__(cls):
         # if the instance is None, create a new instance
@@ -39,12 +40,12 @@ class Config(object):
                 file_name = "config.prod.toml"
             else:
                 raise RuntimeError("Config file not found in path.")
-        
+
             toml_data = toml.load(file_name)
 
             cls._data = toml_data
 
         return cls._instance
-    
+
     def __getitem__(self, key):
         return self._data[key]
