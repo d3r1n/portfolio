@@ -1,3 +1,4 @@
 __pycache__/
 config.dev.toml
 config.prod.toml
+.ruff_cache
