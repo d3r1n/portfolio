@@ -1,11 +1,5 @@
-
 export default function Projects() {
+	// get projects
 
-    // get projects
-
-    return (
-        <div>
-
-        </div>
-    )
+	return <div></div>;
 }

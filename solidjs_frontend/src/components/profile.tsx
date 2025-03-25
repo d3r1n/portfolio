@@ -2,68 +2,50 @@ import LinkedIn from "iconoir/icons/regular/linkedin.svg?raw";
 import GitHub from "iconoir/icons/regular/github.svg?raw";
 import Link from "iconoir/icons/regular/link.svg?raw";
 
-let linkStyle =
-    "flex items-center justify-center min-h-10 min-w-10 border-rd-md *:size-8 color-white shadow-md shadow-stone-900/30";
+const linkStyle = "link *:size-8 p-1 flex border-solid border-2 rounded-md color-neutral-600 hover:bg-neutral-600 hover:color-neutral-100 hover:border-neutral-600 transition"
 
-let colorsLinkedin = "bg-[#0072b1]";
-let colorsGithub = "bg-stone-950";
-let colorsDevto = "bg-green-600";
+const buttonStyle = "button px-4 py-2 text-center text-lg text-neutral-100 border-none rounded-md bg-blue-500 hover:bg-blue-400 transition"
 
-let img =
-    "url(https://images.unsplash.com/photo-1605915034248-ba76b2f32c3c?q=80&w=3168&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)";
+const taglines = [
+	"jack of all trades",
+	"too many ideas, not enough hours",
+	"not normal, quite the opposite",
+	"let's go invent tomorrow..."
+]
 
-function joinClasses(classArray: Array<string>): string {
-    return classArray.join(" ");
+function random_tagline() {
+	return taglines[
+		Math.floor(Math.random() * taglines.length)
+	]
 }
 
 // @ts-ignore
 export default function Profile(props) {
-    return (
-        <div
-            class={joinClasses([
-                "profile flex items-center justify-between",
-                props.classExtra,
-            ])}
-        >
-            <div
-                id="profile-image"
-                class="size-64 border-rd-md ml-4 outline-solid outline-2 outline-stone-50/50 outline-offset-2 shadow-lg shadow-indigo-600/40 opacity-90"
-                style:background-image={img}
-                style="background-size: cover;"
-            ></div>
-            <div class="information flex flex-col gap-2 mr-4">
-                <span id="name" class="text-8 text-stone-800 font-[Inter]">
-                    Derin Onder Eren
-                </span>
+	return (
+		<div class={["profile flex justify-between", ...props.classExtra].join(" ")}>
 
-                <span
-                    id="availability"
-                    class="text-6 text-stone-500 font-[Inter] font-light font-italic"
-                >
-                    available
-                </span>
+			<div class="profile-details flex flex-col gap-4 justify-center items-center w-max">
+				<span id="tagline" class="font-[Inter] font-light italic text-xl text-neutral-600 text-center w-full">{random_tagline()}</span>
 
-                <span id="links" class="flex gap-4">
-                    <a
-                        href="https://linkedin.com/in/d3r1n"
-                        id="linkedin"
-                        class={joinClasses([linkStyle, colorsLinkedin])}
-                        innerHTML={LinkedIn}
-                    />
-                    <a
-                        href="https://github.com/d3r1n"
-                        id="github"
-                        class={joinClasses([linkStyle, colorsGithub])}
-                        innerHTML={GitHub}
-                    />
-                    <a
-                        href="https://dev.to/d3r1n"
-                        id="devto"
-                        class={joinClasses([linkStyle, colorsDevto])}
-                        innerHTML={Link}
-                    />
-                </span>
-            </div>
-        </div>
-    );
+				<span id="name" class="font-[Inter] font-medium text-4xl text-neutral-800 text-center w-full">Derin Önder EREN</span>
+
+				<div class="socials w-full flex gap-4 justify-center items-center">
+					<a href="" class={linkStyle} innerHTML={LinkedIn}></a>
+					<a href="" class={linkStyle} innerHTML={GitHub}></a>
+					<a href="" class={linkStyle} innerHTML={Link}></a>
+				</div>
+
+				<div class="actions w-full font-[Inter] flex gap-4 justify-center items-center">
+					<button class={buttonStyle}>contact me</button>
+					<button class={buttonStyle}>view projects</button>
+				</div>
+			</div>
+
+			<div class="profile-image">
+				<img class="rounded-md"
+					src="https://media.licdn.com/dms/image/v2/D4E03AQHbxxIq32jpnA/profile-displayphoto-shrink_400_400/B4EZWyBb5tHMAg-/0/1742448476311?e=1748476800&v=beta&t=_ISJttfHxu51XyzZyBelLo8H7IZ2S9DgkffssWrEFpo" alt="" />
+			</div>
+
+		</div>
+	);
 }

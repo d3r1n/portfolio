@@ -17,6 +17,7 @@
     "vite-plugin-solid": "^2.11.6"
   },
   "dependencies": {
+    "@biomejs/biome": "^1.9.4",
     "@solidjs/meta": "^0.29.4",
     "@solidjs/router": "^0.15.3",
     "iconoir": "^7.10.1",
