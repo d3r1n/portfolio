@@ -1,0 +1,10 @@
+[spotify]
+
+baseUrl = "http://localhost:8000/spotify/"
+currentlyPlayingUrl = "currently-playing"
+lastPlayedUrl = "last-played"
+
+[spotify.topItems]
+limit = 10
+artistsUrl = "top-artists"
+tracksUrl = "top-tracks"

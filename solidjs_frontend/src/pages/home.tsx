@@ -1,8 +1,9 @@
 import { MetaProvider, Link } from "@solidjs/meta";
 
-import Profile from "../components/profile";
-import Aboutme from "../components/aboutme";
-import Navbar from "../components/navbar";
+import Profile from "@/components/profile";
+import Aboutme from "@/components/aboutme";
+import Navbar from "@/components/navbar";
+import SpotifyWidget from "@/components/spotify-widget";
 
 import "../styles/body.css";
 
