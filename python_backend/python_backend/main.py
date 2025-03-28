@@ -2,12 +2,13 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from python_backend.routers import spotify
+from python_backend.routers import spotify, location_img
 
 
 app = FastAPI()
 
 app.include_router(spotify.router)
+app.include_router(location_img.router)
 
 allowed_origins = ["http://localhost:3000"]
 
