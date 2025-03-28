@@ -1,11 +1,22 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 from python_backend.routers import spotify
+
 
 app = FastAPI()
 
 app.include_router(spotify.router)
+
+allowed_origins = ["http://localhost:3000"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/healthcheck")
