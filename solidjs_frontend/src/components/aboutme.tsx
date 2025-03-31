@@ -1,4 +1,5 @@
 import SpotifyWidget from "./spotify-widget";
+import LocationWidget from "./location-widget";
 
 // @ts-ignore
 export default function Aboutme(props) {
@@ -8,8 +9,8 @@ export default function Aboutme(props) {
 				About
 			</span>
 
-			<div class="about-content grid grid-cols-3 grid-rows-2 gap-8 w-full">
-				<span class="about-text	col-span-2 flex justify-center align-center p-4 rounded-md bg-neutral-200 font-[Inter] text-lg text-neutral-900">
+			<div class="about-content grid grid-cols-3 grid-rows-[1fr_2fr] gap-8 w-full">
+				<span class="about-text col-span-2 row-span-1 flex justify-center align-center p-4 rounded-md bg-neutral-200 font-[Inter] text-lg text-neutral-900">
 					<p class="p-0 m-0 h-max">
 						I'm Derin, currently pursuing a <i>BSc in Computer Science </i>
 						and a <i> BComm </i> at <b> Mount Allison University. </b>I consider
@@ -27,7 +28,7 @@ export default function Aboutme(props) {
 
 				<SpotifyWidget />
 
-				<span class="about-location_widget"></span>
+				<LocationWidget />
 
 				<span class="about-fun_facts cols-span-2"></span>
 			</div>

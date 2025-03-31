@@ -1,5 +1,5 @@
 //@ts-ignore
-import apiConfig from "../../api.const.toml";
+import apiConfig from "@root/api.const.toml";
 
 import { createResource, Suspense, Switch, Match } from "solid-js";
 
@@ -75,24 +75,27 @@ async function getTrack(): Promise<Track | null> {
 
 function SpotifyWidgetSkeleton() {
     return (
-        <div class="w-full h-full gap-4 m-4 flex items-center box-border">
+        <div class="w-full h-full gap-4 p-4 flex items-center box-border">
             <SkeletonRectangle classExtra={["w-2/5 aspect-square", "bg-neutral-300"]} />
 
-            <div class="skeleton-lines w-1/2 flex flex-col gap-4">
-                <SkeletonLine />
-                <SkeletonLine classExtra={["w-4/5", "h-4", "bg-neutral-300"]} />
+            <div class="skeleton-lines w-1/2 h-full flex flex-col justify-end gap-4 ">
                 <SkeletonLine classExtra={["w-3/5", "h-4", "bg-neutral-300"]} />
+                <SkeletonLine />
                 <SkeletonLine classExtra={["w-4/5", "h-4", "bg-neutral-300"]} />
             </div>
         </div>
     )
 }
 
-export default function SpotifyWidget() {
+export default function SpotifyWidget(props: { classExtra?: Array<string> }) {
     const [trackData] = createResource(getTrack);
 
+    if (!props.classExtra) {
+        props.classExtra = []
+    }
+
     return (
-        <div class="spotify-widget flex justify-center items-center w-full h-full bg-neutral-200 rounded-md box-border shadow-md">
+        <div class={["spotify-widget flex justify-center items-center w-full h-full bg-neutral-200 rounded-md box-border shadow-md", ...props.classExtra].join(" ")}>
             <Suspense fallback={<SpotifyWidgetSkeleton />}>
                 <Switch>
                     <Match when={trackData.loading || !trackData()}>

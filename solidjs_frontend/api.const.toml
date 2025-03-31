@@ -8,3 +8,7 @@ lastPlayedUrl = "last-played"
 limit = 10
 artistsUrl = "top-artists"
 tracksUrl = "top-tracks"
+
+[location]
+baseUrl = "http://localhost:8000/location"
+currentLocationUrl = "/current-location-img"

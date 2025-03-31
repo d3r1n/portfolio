@@ -2,13 +2,13 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from python_backend.routers import spotify, location_img
+from python_backend.routers import location, spotify
 
 
 app = FastAPI()
 
 app.include_router(spotify.router)
-app.include_router(location_img.router)
+app.include_router(location.router)
 
 allowed_origins = ["http://localhost:3000"]
 
@@ -23,4 +23,4 @@ app.add_middleware(
 @app.get("/healthcheck")
 async def healthcheck():
     # TODO: implement proper healthcheck
-    return JSONResponse({"condition": "UP"}, status_code=200)
+    return JSONResponse({"condition": "system up"}, status_code=200)

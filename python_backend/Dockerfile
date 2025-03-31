@@ -20,4 +20,4 @@ RUN poetry install --no-root
 
 EXPOSE 8000
 
-CMD ["poetry", "run", "fastapi", "run", "python_backend/main.py", "--port", "8000"]
+CMD ["poetry", "run", "fastapi", "dev", "python_backend/main.py", "--host", "0.0.0.0", "--port", "8000"]
