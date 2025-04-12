@@ -1,0 +1,33 @@
+services:
+    frontend:
+        build: ./solidjs_frontend
+        volumes:
+            - frontend_build:/app/dist
+        depends_on:
+            - backend
+
+    backend:
+        build: ./python_backend
+        ports:
+            - "5000:5000"
+        expose:
+            - "5000"
+
+    caddy:
+        image: caddy:latest
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - ./Caddyfile:/etc/caddy/Caddyfile
+            - frontend_build:/srv/frontend
+            - caddy_data:/data
+            - caddy_config:/config
+        depends_on:
+            - frontend
+            - backend
+
+volumes:
+    frontend_build:
+    caddy_data:
+    caddy_config:

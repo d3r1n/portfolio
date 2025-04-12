@@ -1,6 +1,6 @@
 [spotify]
 
-baseUrl = "http://localhost:8000/spotify/"
+baseUrl = "http://localhost/api/spotify/"
 currentlyPlayingUrl = "currently-playing"
 lastPlayedUrl = "last-played"
 
@@ -10,5 +10,5 @@ artistsUrl = "top-artists"
 tracksUrl = "top-tracks"
 
 [location]
-baseUrl = "http://localhost:8000/location"
+baseUrl = "http://localhost/api/location"
 currentLocationUrl = "/current-location-img"
