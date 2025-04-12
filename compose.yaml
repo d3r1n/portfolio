@@ -8,8 +8,6 @@ services:
 
     backend:
         build: ./python_backend
-        ports:
-            - "5000:5000"
         expose:
             - "5000"
 
