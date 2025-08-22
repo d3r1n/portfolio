@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse, Response
 
 from python_backend.dependencies import get_client_session
-from python_backend.lib.hardcover_api import HardcoverApi, HardcoverBook
+from python_backend.lib.api.hardcover_api import HardcoverApi, HardcoverBook
 
 router = APIRouter(prefix="/books")
 

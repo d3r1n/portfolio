@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 
 from python_backend.dependencies import get_client_session
-from python_backend.lib.spotify_helper import (
+from python_backend.src.python_backend.lib.api.spotify_api import (
 	SpotifyError,
 	SpotifyHelper,
 	TopArtist,

@@ -5,7 +5,7 @@ from typing import Annotated
 from aiohttp import ClientSession
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, validate_call
 
-from .config_helper import Config
+from ..config import Config
 
 config = Config()
 

@@ -1,7 +1,7 @@
 from aiohttp import ClientSession
 from pydantic import BaseModel, HttpUrl
 
-from .config_helper import Config
+from ..config import Config
 
 CONFIG = Config()
 

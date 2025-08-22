@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from python_backend.lib.config_helper import Config
+from python_backend.lib.config import Config
 from python_backend.routers import books, spotify
 
 from .dependencies import CLIENT_SESSION

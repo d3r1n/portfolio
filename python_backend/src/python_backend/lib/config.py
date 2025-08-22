@@ -1,5 +1,4 @@
 from os import environ
-from typing import Self
 
 import toml
 
