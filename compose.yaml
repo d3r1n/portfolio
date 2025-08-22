@@ -1,24 +1,37 @@
 services:
     frontend:
-        build: ./solidjs_frontend
+        build: ./sveltekit_frontend
+        expose:
+            - "3000"
         volumes:
-            - frontend_build:/app/dist
+            - /app/node_modules # Prevent host node_modules override (optional but smart)
         depends_on:
             - backend
+
+        develop:
+            watch:
+                - action: sync
+                  path: ./sveltekit_frontend
+                  target: /app
 
     backend:
         build: ./python_backend
         expose:
             - "5000"
 
+        develop:
+            watch:
+                - action: sync
+                  path: ./python_backend
+                  target: /app
+
     caddy:
-        image: caddy:latest
+        image: caddy:2.10
         ports:
             - "80:80"
             - "443:443"
         volumes:
             - ./Caddyfile:/etc/caddy/Caddyfile
-            - frontend_build:/srv/frontend
             - caddy_data:/data
             - caddy_config:/config
         depends_on:
@@ -26,6 +39,5 @@ services:
             - backend
 
 volumes:
-    frontend_build:
     caddy_data:
     caddy_config:

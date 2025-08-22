@@ -1,0 +1,12 @@
+{
+    "spotify": {
+        "baseUrl": "/api/spotify/",
+        "currentlyPlayingUrl": "currently-playing",
+        "lastPlayedUrl": "last-played",
+        "topItems": {
+            "artistsUrl": "top-artists",
+            "tracksUrl": "top-tracks",
+            "limit": 10
+        }
+    }
+}

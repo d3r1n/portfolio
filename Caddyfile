@@ -1,22 +1,14 @@
 :80 {
-    # Serve the frontend files from the /srv/frontend directory
-    root * /srv/frontend
-    file_server
+    # Reverse proxy everything to the SvelteKit server
+    reverse_proxy frontend:3000
 
-    # Reverse proxy for API requests
+    # Reverse proxy for API
     handle_path /api/* {
         reverse_proxy backend:5000
     }
 
-    # Special handling for the OpenAPI spec and Docs
     handle /api/openapi.json {
+        rewrite * /openapi.json
         reverse_proxy backend:5000
     }
-
-    handle /api/docs {
-        reverse_proxy backend:5000
-    }
-
-    # Gzip compression for static files
-    encode gzip
 }

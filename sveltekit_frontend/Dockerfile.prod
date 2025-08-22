@@ -1,0 +1,34 @@
+# -------- Base build stage --------
+FROM oven/bun:latest AS build
+
+# Set working directory
+WORKDIR /app
+
+# Install dependencies
+COPY bun.lock package.json ./
+RUN bun install
+
+# Copy rest of the application
+COPY . .
+
+# Build the SvelteKit app (adapter-node will output a server)
+RUN bun run build
+
+# -------- Production stage --------
+FROM oven/bun:latest AS runner
+
+WORKDIR /app
+
+# Copy only necessary files from build stage
+COPY --from=build /app/build ./build
+COPY --from=build /app/package.json ./
+COPY --from=build /app/bun.lock ./
+
+# Install runtime deps only
+RUN bun install --production
+
+# Expose the port your app runs on
+EXPOSE 3000
+
+# Run the SvelteKit server
+CMD ["bun", "run", "start"]
