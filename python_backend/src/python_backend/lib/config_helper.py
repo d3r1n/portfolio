@@ -3,6 +3,8 @@ from typing import Self
 
 import toml
 
+from python_backend.lib.util.singleton import SingletonMeta
+
 # check the deployment mode in the environment variables
 # Modes: PROD, DEV
 try:
@@ -12,7 +14,7 @@ except KeyError:
 	DEPLOYMENT_MODE = "DEV"
 
 
-class Config:
+class Config(metaclass=SingletonMeta):
 	"""Project configurations as singleton class.
 
 	This class is used to access all configuration inside our `config.[mode].toml` files.
@@ -27,26 +29,18 @@ class Config:
 	    - DEV: uses the `config.dev.toml` file for configuration
 	"""
 
-	_instance: Self | None = None  # set the instance to None when created
+	def __init__(self):
+		# selecting the config file dependant on the deployment mode
+		if DEPLOYMENT_MODE == "DEV":
+			file_name = "config.dev.toml"
+		elif DEPLOYMENT_MODE == "PROD":
+			file_name = "config.prod.toml"
+		else:
+			raise RuntimeError(
+				"Config file not found in path.\nMake sure you have `config.dev.toml` or `config.prod.toml` in root of python_backend directory."
+			)
 
-	def __new__(cls):
-		# if the instance is None, create a new instance
-		if cls._instance is None:
-			cls._instance = super(Config, cls).__new__(cls)
-
-			# selecting the config file dependant on the deployment mode
-			if DEPLOYMENT_MODE == "DEV":
-				file_name = "config.dev.toml"
-			elif DEPLOYMENT_MODE == "PROD":
-				file_name = "config.prod.toml"
-			else:
-				raise RuntimeError("Config file not found in path.")
-
-			toml_data = toml.load(file_name)
-
-			cls._data = toml_data
-
-		return cls._instance
+		self._data = toml.load(file_name)
 
 	def __getitem__(self, key):
 		return self._data[key]

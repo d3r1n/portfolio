@@ -4,9 +4,8 @@ from aiohttp import ClientSession
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse, Response
 
-from python_backend.lib.hardcover_api import HardcoverApi, HardcoverBook
-
 from python_backend.dependencies import get_client_session
+from python_backend.lib.hardcover_api import HardcoverApi, HardcoverBook
 
 router = APIRouter(prefix="/books")
 
@@ -22,4 +21,4 @@ async def currently_reading(
 	if not book:
 		return Response(status_code=204)
 
-	return book
+	return JSONResponse(content=book, status_code=200)

@@ -60,17 +60,17 @@
             I don't have a five-year blueprint. I have questions that burn,
             ideas that glow, and dreams that fuel me. I build what wasn't there
             before - create uniqueness - not for interference, but because I
-            just can't not. Labels are too tight. I live at intersections: STEM,
-            art, music, poetry, logic, curiosity, chaos, calm. I'm not built for
-            one lane; I move through disciplines like they're languages, not
-            borders. Because borders bore me. Get it? Lastly here's a quote that
-            I live by:
+            just can't not. Labels are too tight. I live at intersections:
+            technical and artistic, logic and emotion, chaos and calm. I'm not
+            built for one lane; I move through disciplines like they're
+            languages, not borders. Because borders bore me. Get it? Lastly
+            here's a quote that I live by:
         </p>
 
         <div
             class="flex items-center gap-4 font-[Nunito] text-lg text-base-content italic"
         >
-            <span class="w-1 h-8 bg-base-200 rounded-full"></span>
+            <span class="w-1 h-full bg-base-200 rounded-full"></span>
             "Jack of all trades, master of none. Most times better than master of
             one."
         </div>
