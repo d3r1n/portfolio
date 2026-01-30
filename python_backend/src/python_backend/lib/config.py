@@ -7,10 +7,10 @@ from python_backend.lib.util.singleton import SingletonMeta
 # check the deployment mode in the environment variables
 # Modes: PROD, DEV
 try:
-	DEPLOYMENT_MODE = environ["DEPLOYMENT_MODE"]
+	deployment_mode = environ["DEPLOYMENT_MODE"]
 except KeyError:
 	# the environment variable is not set so we default to development mode
-	DEPLOYMENT_MODE = "DEV"
+	deployment_mode = "DEV"
 
 
 class Config(metaclass=SingletonMeta):
@@ -30,9 +30,9 @@ class Config(metaclass=SingletonMeta):
 
 	def __init__(self):
 		# selecting the config file dependant on the deployment mode
-		if DEPLOYMENT_MODE == "DEV":
+		if deployment_mode == "DEV":
 			file_name = "config.dev.toml"
-		elif DEPLOYMENT_MODE == "PROD":
+		elif deployment_mode == "PROD":
 			file_name = "config.prod.toml"
 		else:
 			raise RuntimeError(

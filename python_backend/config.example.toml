@@ -2,3 +2,10 @@
 client_id = ""
 client_secret = ""
 refresh_token = ""
+
+[hardcover]
+user_id = ""
+api_token = ""
+
+[api]
+allowed_origins = ["*"]

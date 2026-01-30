@@ -12,12 +12,21 @@ dependencies = [
     "fastapi[standard] >=0.115.11,<0.116.0",
 ]
 
-[tool.uv]
-# dev-only dependencies
-dev-dependencies = ["ruff>=0.11.2,<0.12.0"]
+[dependency-groups]
+dev = [
+	"ruff>=0.11.2,<0.12.0"
+]
+
 
 [tool.ruff]
 line-length = 120
+
+[tool.basedpyright]
+venvPath = "."
+venv = ".venv"
+
+reportArgumentType = false
+reportReturnType = false
 
 [tool.ruff.lint]
 extend-select = ["I"]

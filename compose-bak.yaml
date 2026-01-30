@@ -4,27 +4,34 @@ services:
         expose:
             - "3000"
         volumes:
-            - ./sveltekit_frontend:/app:Z
             - /app/node_modules # Prevent host node_modules override (optional but smart)
         depends_on:
             - backend
+
+        develop:
+            watch:
+                - action: sync
+                  path: ./sveltekit_frontend
+                  target: /app
 
     backend:
         build: ./python_backend
         expose:
             - "5000"
-        volumes:
-            - ./python_backend:/app:Z
-        environment:
-            - PYTHONDONTWRITEBYTECODE=1
-            - PYTHONUNBUFFERED=1
+
+        develop:
+            watch:
+                - action: sync
+                  path: ./python_backend
+                  target: /app
+
     caddy:
         image: caddy:2.10
         ports:
-            - "8080:80" # Map host 8080 to container 80
-            - "8443:443" # Map host 8443 to container 443
+            - "80:80"
+            - "443:443"
         volumes:
-            - ./Caddyfile:/etc/caddy/Caddyfile:Z
+            - ./Caddyfile:/etc/caddy/Caddyfile
             - caddy_data:/data
             - caddy_config:/config
         depends_on:

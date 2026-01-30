@@ -1,6 +1,6 @@
 import base64
 from datetime import datetime, timedelta
-from typing import Annotated
+from typing import Annotated, TypeVar
 
 from aiohttp import ClientSession
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, validate_call
@@ -11,6 +11,8 @@ config = Config()
 
 _STATUS_OK = 200
 _STATUS_NO_CONTENT = 204
+
+T = TypeVar("T")
 
 
 class SpotifyError(Exception):
@@ -46,7 +48,7 @@ class TopArtist(BaseModel):
 
 
 # to be used with map to get only the artist name
-def _format_artists(artist: dict) -> str:
+def _format_artists(artist: dict[str, T]) -> str:
 	return artist["name"]
 
 
@@ -67,8 +69,8 @@ class SpotifyHelper:
 		self._CLIENT_SECRET: str = config["spotify"]["client_secret"]
 		self._REFRESH_TOKEN: str = config["spotify"]["refresh_token"]
 
-		self._access_token: str = None
-		self._expiry_time: datetime = None
+		self._access_token: str | None = None
+		self._expiry_time: datetime | None = None
 
 	async def _refresh_access_token(self, session: ClientSession) -> None:
 		"""Refresh the Spotify access token if it has expired.
