@@ -1,11 +1,19 @@
 FROM oven/bun:latest
 
+# Create app directory
 WORKDIR /app
 
+# Copy only lockfile & package.json first for caching
 COPY bun.lock package.json ./
-RUN bun install --no-cache --frozen-lockfile
 
+# Install deps
+RUN bun install
+
+# Copy source code
 COPY . .
 
+# Expose port
 EXPOSE 3000
-CMD ["bun", "run", "--bun", "dev", "--port", "3000", "--host", "0.0.0.0"]
+
+# Run dev server
+CMD ["bun", "run", "dev", "--port", "3000", "--host", "0.0.0.0"]
