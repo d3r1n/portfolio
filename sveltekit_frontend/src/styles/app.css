@@ -1,5 +1,7 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @plugin "daisyui" {
-    themes: corporate --default, dark --prefersdark;
+	themes:
+		wireframe --default,
+		black --prefersdark;
 }
