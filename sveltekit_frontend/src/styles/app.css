@@ -5,3 +5,5 @@
 		wireframe --default,
 		black --prefersdark;
 }
+
+@custom-variant dark (&:where([data-theme=black], [data-theme=black] *));

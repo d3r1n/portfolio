@@ -26,16 +26,16 @@
 	];
 </script>
 
-<div id="navbar" class="navbar light:shadow-sm">
+<div id="navbar" class="navbar px-4 shadow-sm dark:shadow-none">
 	<a class="navbar-start flex items-center" href="/">
-		<Rocket />
+		<Rocket size={24} class="btn btn-ghost btn-square p-1 stroke-sky-500" />
 	</a>
 
 	<div class="navbar-center flex gap-4 items-center">
 		{#each navItems as item}
 			<a
 				aria-label={item.name}
-				class="btn btn-outline btn-md btn-secondary text-primary-content"
+				class="btn btn-outline btn-md btn-secondary text-base-content"
 				href={item.href}
 			>
 				<item.icon size={24} />
