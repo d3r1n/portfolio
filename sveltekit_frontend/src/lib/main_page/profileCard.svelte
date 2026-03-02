@@ -11,7 +11,7 @@
 
 <div
 	id="profile-card"
-	class="flex gap-8 items-center p-8 rounded-sm font-[Inter] shadow-sm dark:shadow-none dark:outline-2 outline-base-content/10"
+	class="flex gap-8 items-center p-8 rounded-sm font-[Inter] shadow-sm dark:shadow-none dark:outline-2 outline-base-content/10 w-full"
 >
 	<div class="avatar">
 		<div

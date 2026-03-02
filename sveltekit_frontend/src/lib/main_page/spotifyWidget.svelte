@@ -1,9 +1,5 @@
 <script lang="ts">
 	import apiConfig from "@/api.const.json";
-	import {
-		setTrackIsPlaying,
-		getTrackIsPlaying,
-	} from "./spotifyState.svelte";
 
 	import { browser } from "$app/environment";
 	import { ArrowUpRight, Disc, Disc3 } from "@lucide/svelte";
@@ -66,9 +62,6 @@
 					currentlyPlayingData.artists_joined =
 						currentlyPlayingData.artists.join(", ");
 
-					// set state for sidebar to use
-					setTrackIsPlaying(true);
-
 					return currentlyPlayingData;
 				}
 			}
@@ -79,7 +72,6 @@
 			lastPlayedData.artists_joined = lastPlayedData.artists.join(", ");
 
 			if (lastPlayedResponse.ok) {
-				setTrackIsPlaying(false);
 				return lastPlayedData;
 			} else {
 				return null;
@@ -111,13 +103,17 @@
 </script>
 
 {#snippet skeleton()}
-	<div class="flex gap-4 items-center self-start *:animate-pulse">
-		<span class="w-32 aspect-square rounded-full bg-base-200"></span>
+	<div
+		class="grid grid-cols-2 auto-rows-min items-center p-8 rounded-sm shadow-sm dark:shadow-none dark:outline-2 outline-base-content/10 md:min-w-2/5"
+	>
+		<span class="skeleton w-1/2 h-4 rounded-sm col-span-2 mb-8"></span>
+
+		<span class="skeleton w-64 aspect-square rounded-full"></span>
 
 		<div class="flex flex-col gap-4 items-start justify-center">
-			<span class="w-48 h-6 bg-base-200 rounded-lg"></span>
-			<span class="w-32 h-4 bg-base-200 rounded-lg"></span>
-			<span class="w-42 h-4 bg-base-200 rounded-lg"></span>
+			<span class="skeleton w-48 h-6 rounded-sm"></span>
+			<span class="skeleton w-32 h-4 rounded-sm"></span>
+			<span class="skeleton w-42 h-4 rounded-sm"></span>
 		</div>
 	</div>
 {/snippet}
@@ -134,7 +130,7 @@
 			<span
 				class="flex items-center gap-4 self-start text-base text-base-content/70"
 			>
-				{#if getTrackIsPlaying()}
+				{#if track.is_playing}
 					<span use:rotateDiscAnimation>
 						<Disc3 />
 					</span>

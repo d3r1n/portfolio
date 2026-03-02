@@ -22,7 +22,7 @@
 	<!-- Content -->
 	<div class="flex flex-col items-start gap-8 w-full md:max-w-384 p-4">
 		<Navbar />
-		<div class="flex justify-between w-full">
+		<div class="flex justify-center gap-16 w-full">
 			<ProfileCard />
 			<SpotifyWidget />
 		</div>
