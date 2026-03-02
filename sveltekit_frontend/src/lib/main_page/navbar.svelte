@@ -24,9 +24,26 @@
 		{ name: "Let's Talk", href: "#lets-talk", icon: MessageCircle },
 		{ name: "Stuff", href: "#stuff", icon: LayoutDashboard },
 	];
+
+	import { theme } from "$lib/theme.svelte";
+	import { onMount } from "svelte";
+
+	onMount(() => {
+		// Initialize from localStorage or system preference
+		const saved = localStorage.getItem("theme");
+		const systemDark = window.matchMedia(
+			"(prefers-color-scheme: dark)",
+		).matches;
+
+		theme.current = saved || (systemDark ? "black" : "wireframe");
+		document.documentElement.setAttribute("data-theme", theme.current);
+	});
 </script>
 
-<div id="navbar" class="navbar px-4 shadow-sm dark:shadow-none">
+<div
+	id="navbar"
+	class="navbar px-4 shadow-sm dark:shadow-none font-[Noto_Sans]"
+>
 	<a class="navbar-start flex items-center" href="/">
 		<Rocket size={24} class="btn btn-ghost btn-square p-1 stroke-sky-500" />
 	</a>
@@ -35,7 +52,7 @@
 		{#each navItems as item}
 			<a
 				aria-label={item.name}
-				class="btn btn-outline btn-md btn-secondary text-base-content"
+				class="btn btn-outline btn-md btn-neutral text-neutral-content"
 				href={item.href}
 			>
 				<item.icon size={24} />
@@ -48,7 +65,12 @@
 	<div class="navbar-end">
 		<label class="swap swap-rotate relative">
 			<!-- this hidden checkbox controls the state -->
-			<input type="checkbox" class="theme-controller" value="wireframe" />
+			<input
+				type="checkbox"
+				class="theme-controller"
+				checked={theme.current === "black"}
+				onchange={() => theme.toggle()}
+			/>
 
 			<Sun size={24} class="swap-on z-10 size-8 stroke-current" />
 

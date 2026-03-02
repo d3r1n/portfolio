@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Navbar from "@/lib/main_page/navbar.svelte";
 	import ProfileCard from "@/lib/main_page/profileCard.svelte";
-	import SidebarWidget from "@/lib/main_page/sidebarWidget.svelte";
+	import SpotifyWidget from "@/lib/main_page/spotifyWidget.svelte";
 </script>
 
 <svelte:head>
@@ -12,7 +12,7 @@
 		crossorigin="anonymous"
 	/>
 	<link
-		href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Limelight&family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap"
+		href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap"
 		rel="stylesheet"
 	/>
 </svelte:head>
@@ -20,9 +20,11 @@
 <!-- Outside full width -->
 <div class="flex flex-col items-center justify-center gap-16 max-w-full">
 	<!-- Content -->
-	<div class="flex items-start gap-8 w-full md:max-w-384 p-4">
+	<div class="flex flex-col items-start gap-8 w-full md:max-w-384 p-4">
 		<Navbar />
-		<ProfileCard />
-		<SidebarWidget />
+		<div class="flex justify-between w-full">
+			<ProfileCard />
+			<SpotifyWidget />
+		</div>
 	</div>
 </div>

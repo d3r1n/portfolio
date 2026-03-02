@@ -6,4 +6,5 @@
 		black --prefersdark;
 }
 
-@custom-variant dark (&:where([data-theme=black], [data-theme=black] *));
+@custom-variant dark (&:where([data-theme=black], [data-theme=black] *, @media (prefers-color-scheme: dark)));
+@custom-variant light (&:where([data-theme=wireframe], [data-theme=wireframe] *));
