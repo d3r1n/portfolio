@@ -5,16 +5,15 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 
-from python_backend.dependencies import get_client_session
-from python_backend.lib.api.spotify_api import (
+from ..deps import get_client_session, get_spotify_api, get_spotify_service
+from ..lib.api.spotify_api import (
+	SpotifyApi,
 	SpotifyError,
-	SpotifyHelper,
 	TopArtist,
 	Track,
 )
 
 # Set to None to be declared when the lifecycle of the route starts
-spotify_helper = SpotifyHelper()
 
 router = APIRouter(prefix="/spotify")
 
@@ -49,12 +48,14 @@ spotify_error_response = {
 	},
 )
 async def currently_playing(
-	session: Annotated[ClientSession, Depends(get_client_session)],
+	service: Annotated[tuple[SpotifyApi, ClientSession], Depends(get_spotify_service)],
 ) -> Track | None:
 	"""Get the currently playing track from user's spotify"""
-	if spotify_helper:
+	api, session = service
+
+	if api and session:
 		try:
-			track = await spotify_helper.get_currently_playing(session)
+			track = await api.get_currently_playing(session)
 
 			if track is None:
 				return Response(status_code=204)  # 204 No Content
@@ -69,12 +70,14 @@ async def currently_playing(
 
 @router.get("/last-played", responses=spotify_error_response)
 async def last_played(
-	session: Annotated[ClientSession, Depends(get_client_session)],
+	service: Annotated[tuple[SpotifyApi, ClientSession], Depends(get_spotify_service)],
 ) -> Track | None:
 	"""Get the last played track from user's spotify"""
-	if spotify_helper:
+	api, session = service
+
+	if api and session:
 		try:
-			track = await spotify_helper.get_last_played_track(session)
+			track = await api.get_last_played_track(session)
 
 			return track
 		except SpotifyError as e:
@@ -86,7 +89,7 @@ async def last_played(
 
 @router.get("/top-{type}", responses=spotify_error_response)
 async def top_type(
-	session: Annotated[ClientSession, Depends(get_client_session)],
+	service: Annotated[tuple[SpotifyApi, ClientSession], Depends(get_spotify_service)],
 	type: Literal["artists", "tracks"],
 	limit: int = Query(default=10, ge=1, le=50),
 ) -> list[Track] | list[TopArtist] | None:
@@ -101,14 +104,16 @@ async def top_type(
 			status_code=400,  # 400 Bad Request
 		)
 
-	if spotify_helper:
+	api, session = service
+
+	if api and session:
 		try:
 			if type == "artists":
-				top_user_artists = await spotify_helper.get_top_month_artists(session, limit=limit)
+				top_user_artists = await api.get_top_month_artists(session, limit=limit)
 
 				return top_user_artists
 			if type == "tracks":
-				top_user_tracks = await spotify_helper.get_top_month_tracks(session, limit=limit)
+				top_user_tracks = await api.get_top_month_tracks(session, limit=limit)
 
 				return top_user_tracks
 		except SpotifyError as e:

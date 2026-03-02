@@ -10,6 +10,7 @@ dependencies = [
     "aiohttp[speedups] >=3.11.13,<4.0.0",
     "toml >=0.10.2,<0.11.0",
     "fastapi[standard] >=0.115.11,<0.116.0",
+    "loguru>=0.7.3",
 ]
 
 [dependency-groups]
@@ -27,6 +28,7 @@ venv = ".venv"
 
 reportArgumentType = false
 reportReturnType = false
+reportCallInDefaultInitializer = false
 
 [tool.ruff.lint]
 extend-select = ["I"]

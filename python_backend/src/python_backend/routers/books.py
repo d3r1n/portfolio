@@ -4,21 +4,28 @@ from aiohttp import ClientSession
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse, Response
 
-from python_backend.dependencies import get_client_session
-from python_backend.lib.api.hardcover_api import HardcoverApi, HardcoverBook
+from ..deps import get_client_session, get_hardcover_api, get_hardcover_service
+from ..lib.api.hardcover_api import HardcoverApi, HardcoverBook, HardcoverError
 
 router = APIRouter(prefix="/books")
-
-_hardcover_api = HardcoverApi()
 
 
 @router.get("/currently-reading")
 async def currently_reading(
-	session: Annotated[ClientSession, Depends(get_client_session)],
+	service: Annotated[tuple[HardcoverApi, ClientSession], Depends(get_hardcover_service)],
 ) -> HardcoverBook | None:
-	book = await _hardcover_api.get_currently_reading_book(session)
+	api, session = service
 
-	if not book:
-		return Response(status_code=204)
+	if api and session:
+		try:
+			book = await api.get_currently_reading_book(session)
 
-	return JSONResponse(content=book, status_code=200)
+			if not book:
+				return Response(status_code=204)
+
+			return JSONResponse(content=book, status_code=200)
+		except HardcoverError as e:
+			return JSONResponse(
+				{"error": "HardcoverError", "message": e.args[0]["message"]},
+				status_code=502,
+			)

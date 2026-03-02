@@ -1,9 +1,7 @@
 from aiohttp import ClientSession
 from pydantic import BaseModel, HttpUrl
 
-from ..config import Config
-
-CONFIG = Config()
+from src.python_backend.lib.util.config import Config
 
 _STATUS_SUCCESS = 200
 
@@ -33,9 +31,9 @@ class HardcoverApi:
 
 	GRAPHQL_URL = "https://api.hardcover.app/v1/graphql"
 
-	def __init__(self) -> None:
-		self._API_TOKEN: str = CONFIG["hardcover"]["api_token"]
-		self._USER_ID: int = CONFIG["hardcover"]["user_id"]
+	def __init__(self, config: Config) -> None:
+		self._USER_ID: str = config.hardcover.user_id
+		self._API_TOKEN: str = config.hardcover.api_token
 
 	async def get_currently_reading_book(
 		self,

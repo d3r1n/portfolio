@@ -5,9 +5,7 @@ from typing import Annotated, TypeVar
 from aiohttp import ClientSession
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, validate_call
 
-from ..config import Config
-
-config = Config()
+from ..util.config import Config
 
 _STATUS_OK = 200
 _STATUS_NO_CONTENT = 204
@@ -52,7 +50,7 @@ def _format_artists(artist: dict[str, T]) -> str:
 	return artist["name"]
 
 
-class SpotifyHelper:
+class SpotifyApi:
 	"""A helper class to interact with the Spotify API.
 
 	Functionality of this class is as follows, refreshing/creating access tokens, fetching the currently playing track,
@@ -63,11 +61,11 @@ class SpotifyHelper:
 	BASE_URL: str = "https://api.spotify.com/v1"
 	AUTH_URL: str = "https://accounts.spotify.com/api"
 
-	def __init__(self) -> None:
+	def __init__(self, config: Config) -> None:
 		"""Initialize the SpotifyHelper instance by loading client credentials and setting access token properties."""
-		self._CLIENT_ID: str = config["spotify"]["client_id"]
-		self._CLIENT_SECRET: str = config["spotify"]["client_secret"]
-		self._REFRESH_TOKEN: str = config["spotify"]["refresh_token"]
+		self._CLIENT_ID: str = config.spotify.client_id
+		self._CLIENT_SECRET: str = config.spotify.client_secret
+		self._REFRESH_TOKEN: str = config.spotify.refresh_token
 
 		self._access_token: str | None = None
 		self._expiry_time: datetime | None = None
@@ -183,7 +181,7 @@ class SpotifyHelper:
 
 		url = self.BASE_URL + "/me/player/recently-played"
 
-		url_params = {"limit": 5}
+		url_params = {"limit": 1}
 
 		headers = {"Authorization": f"Bearer {self._access_token}"}
 
@@ -257,7 +255,7 @@ class SpotifyHelper:
 				name=track_data["name"],
 				album_name=track_data["album"]["name"],
 				album_image=track_data["album"]["images"][0]["url"],
-				artists=map(_format_artists, track_data["artists"]),
+				artists=list(map(_format_artists, track_data["artists"])),
 				track_url=f"https://open.spotify.com/track/{track_data['uri'].split(':')[2]}",
 			)
 

@@ -4,22 +4,20 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from python_backend.lib.config import Config
-from python_backend.routers import books, spotify
-
-from .dependencies import CLIENT_SESSION
-
-config = Config()
+from .deps import get_client_session, get_config
+from .routers import books, spotify
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-	CLIENT_SESSION.startup()
+	await get_client_session.init()
 
 	yield
 
-	await CLIENT_SESSION.shutdown()
+	await get_client_session.close()
 
+
+config = get_config()
 
 app = FastAPI(root_path="/api", lifespan=lifespan)
 
@@ -28,7 +26,7 @@ app.include_router(books.router)
 
 app.add_middleware(
 	CORSMiddleware,
-	allow_origins=config["api"]["allowed_origins"],
+	allow_origins=config.api.allowed_origins,
 	allow_methods=["*"],
 	allow_headers=["*"],
 )
