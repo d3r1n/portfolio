@@ -3,7 +3,6 @@ name = "python_backend"
 version = "0.1.0"
 description = ""
 authors = [{ name = "Derin Onder Eren", email = "derinondereren@gmail.com" }]
-readme = "README.md"
 requires-python = ">=3.13"
 
 dependencies = [

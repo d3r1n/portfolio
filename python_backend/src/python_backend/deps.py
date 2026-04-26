@@ -49,27 +49,28 @@ get_client_session = ClientSessionManager()
 
 
 @lru_cache
-def get_spotify_api() -> SpotifyApi:
+def _get_spotify_api() -> SpotifyApi:
 	"""Singleton provider for SpotifyApi."""
 	config = get_config()
 	return SpotifyApi(config)
 
 
 @lru_cache
-def get_hardcover_api() -> HardcoverApi:
+def _get_hardcover_api() -> HardcoverApi:
 	"""Singleton provider for HardcoverApi."""
 	config = get_config()
 	return HardcoverApi(config)
 
 
 async def get_spotify_service(
-	api: Annotated[SpotifyApi, Depends(get_spotify_api)], session: Annotated[ClientSession, Depends(get_client_session)]
+	api: Annotated[SpotifyApi, Depends(_get_spotify_api)],
+	session: Annotated[ClientSession, Depends(get_client_session)],
 ):
 	return api, session
 
 
 async def get_hardcover_service(
-	api: Annotated[HardcoverApi, Depends(get_hardcover_api)],
+	api: Annotated[HardcoverApi, Depends(_get_hardcover_api)],
 	session: Annotated[ClientSession, Depends(get_client_session)],
 ):
 	return api, session

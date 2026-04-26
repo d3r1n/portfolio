@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 
-from ..deps import get_client_session, get_spotify_api, get_spotify_service
+from ..deps import _get_spotify_api, get_client_session, get_spotify_service
 from ..lib.api.spotify_api import (
 	SpotifyApi,
 	SpotifyError,

@@ -4,7 +4,7 @@ from aiohttp import ClientSession
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse, Response
 
-from ..deps import get_client_session, get_hardcover_api, get_hardcover_service
+from ..deps import get_hardcover_service
 from ..lib.api.hardcover_api import HardcoverApi, HardcoverBook, HardcoverError
 
 router = APIRouter(prefix="/books")

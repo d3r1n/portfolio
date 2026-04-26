@@ -5,12 +5,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from .deps import get_client_session, get_config
+from .lib.util import logger
 from .routers import books, spotify
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 	await get_client_session.init()
+	logger.setup_logger()
 
 	yield
 

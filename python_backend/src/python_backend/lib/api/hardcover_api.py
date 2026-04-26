@@ -1,4 +1,5 @@
 from aiohttp import ClientSession
+from loguru import logger
 from pydantic import BaseModel, HttpUrl
 
 from src.python_backend.lib.util.config import Config
@@ -10,7 +11,9 @@ class HardcoverBook(BaseModel):
 	title: str
 	author: str
 	pages: int
-	image: str
+	image_url: str
+	image_dominant_color: str
+	progress: float
 	link: HttpUrl
 
 
@@ -62,7 +65,30 @@ class HardcoverApi:
 		# GraphQL is the stupidest thing ever. Just design better REST APIs with batch data request/post support.
 		# GraphQL must be erased and forgotten!
 		query = """
-			{ list_books( where: { user_books: { user_id: { _eq: __USER_ID__ }, status_id: { _eq: 2 } } } distinct_on: book_id limit: 1 offset: 0 ) { book { title pages image { url } contributions { author { name } } slug } } }
+			query books {
+			  me {
+			    user_books(distinct_on: book_id, limit: 10, where: {status_id: {_eq: 2}}) {
+			      book {
+			        id
+			        title
+			        image {
+			          url
+			          color
+			        }
+			        slug
+			        contributions(limit: 1) {
+			          author {
+			            name
+			          }
+			        }
+			        pages
+			      }
+			      user_book_reads {
+			        progress
+			      }
+			    }
+			  }
+			}
 		""".replace("__USER_ID__", str(self._USER_ID))  # noqa: E501
 
 		response = await session.post(self.GRAPHQL_URL, headers=headers, json={"query": query})
@@ -71,6 +97,9 @@ class HardcoverApi:
 			raise HardcoverError({"status_code": response.status, "message": await response.text()})
 
 		data = await response.json()
+
+		logger.info("Hardcover API book request hit")
+		logger.info(f"JSON data: \n {data}")
 
 		# Extract the list of books
 		books = data.get("data", {}).get("list_books", [])
@@ -88,6 +117,8 @@ class HardcoverApi:
 			title=book_data.get("title"),
 			author=author or "Unknown Author",
 			pages=book_data.get("pages"),
-			image=book_data.get("image", {}).get("url"),
+			image_url=book_data.get("image", {}).get("url"),
 			link=f"https://hardcover.app/books/{book_data.get('slug')}",
+			progress=book_data.get("user_book_reads").get("progress"),
+			image_dominant_color=book_data.get("image", {}).get("color"),
 		)
