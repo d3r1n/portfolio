@@ -2,7 +2,7 @@ from aiohttp import ClientSession
 from loguru import logger
 from pydantic import BaseModel, HttpUrl
 
-from src.python_backend.lib.util.config import Config
+from ..util.config import Config
 
 _STATUS_SUCCESS = 200
 
