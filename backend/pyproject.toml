@@ -1,5 +1,5 @@
 [project]
-name = "python_backend"
+name = "portfolio"
 version = "0.1.0"
 description = ""
 authors = [{ name = "Derin Onder Eren", email = "derinondereren@gmail.com" }]
