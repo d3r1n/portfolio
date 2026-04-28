@@ -8,5 +8,8 @@
 				"...",
 			],
 		},
+		"Svelte": {
+			"formatter": "language_server",
+		},
 	},
 }
