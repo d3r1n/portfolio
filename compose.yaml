@@ -1,35 +1,44 @@
 services:
     frontend:
-        build: ./sveltekit_frontend
-        expose:
-            - "3000"
+        build:
+            context: ./frontend
+            dockerfile: Dockerfile.dev
         volumes:
-            - ./sveltekit_frontend:/app:Z
-            - /app/node_modules # Prevent host node_modules override (optional but smart)
+            - ./frontend:/app
+            - /app/node_modules # Do not let host modules overwrite container modules
+            - /app/.svelte-kit # Keep internal build artifacts in the container
         depends_on:
             - backend
+        networks:
+            - portfolio-net
 
     backend:
-        build: ./python_backend
-        expose:
-            - "5000"
+        build:
+            context: ./backend
+            dockerfile: Dockerfile.dev
         volumes:
-            - ./python_backend:/app:Z
-        environment:
-            - PYTHONDONTWRITEBYTECODE=1
-            - PYTHONUNBUFFERED=1
+            - ./backend:/app
+            - /app/.venv
+        networks:
+            - portfolio-net
+
     caddy:
-        image: caddy:2.10
+        image: caddy:latest
         ports:
-            - "8080:80" # Map host 8080 to container 80
-            - "8443:443" # Map host 8443 to container 443
+            - "80:80"
+            - "443:443"
         volumes:
-            - ./Caddyfile:/etc/caddy/Caddyfile:Z
+            - ./Caddyfile:/etc/caddy/Caddyfile
             - caddy_data:/data
             - caddy_config:/config
         depends_on:
             - frontend
-            - backend
+        networks:
+            - portfolio-net
+
+networks:
+    portfolio-net:
+        driver: bridge
 
 volumes:
     caddy_data:

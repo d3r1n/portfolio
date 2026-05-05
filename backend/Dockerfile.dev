@@ -1,0 +1,30 @@
+FROM python:3.13-slim
+
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+WORKDIR /app
+
+# Optimization: Bytecode compilation
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_LINK_MODE=copy
+
+# Install dependencies (Standard caching)
+COPY pyproject.toml uv.lock ./
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-install-project
+
+# ... (after uv sync)
+COPY . .
+
+# Add the venv to the path
+ENV PATH="/app/.venv/bin:$PATH"
+
+# CRITICAL FIX: Add src to the Python Path
+# This allows 'import portfolio' to work even though it's inside src/
+ENV PYTHONPATH="/app/src"
+
+EXPOSE 5000
+
+# Run with the package name now that PYTHONPATH is set
+CMD ["uvicorn", "portfolio.main:app", "--host", "0.0.0.0", "--port", "5000", "--reload"]

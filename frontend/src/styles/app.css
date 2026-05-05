@@ -1,6 +1,12 @@
 @import 'tailwindcss';
+
 @plugin 'daisyui/index.js' {
 	themes:
 		wireframe --default,
 		business --prefersdark;
+}
+
+@theme {
+	--font-heading: Roboto, sans-serif;
+	--font-body: Lora, serif;
 }
