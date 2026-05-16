@@ -68,7 +68,7 @@
 	}
 </script>
 
-<div id="navbar" class="font-heading flex w-full flex-row gap-8 text-xl">
+<div id="navbar" class="font-heading mb-8 flex w-full flex-row gap-8 text-xl">
 	<div>
 		<a href="/">derin eren</a>
 	</div>

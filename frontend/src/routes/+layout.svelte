@@ -21,7 +21,7 @@
 	/>
 </svelte:head>
 
-<div id="viewport-container" class="flex w-screen justify-center">
+<div id="viewport-container" class="box-border flex w-screen justify-center">
 	<div id="content" class="w-[60%] pt-48">
 		<Navbar />
 		{@render children()}
