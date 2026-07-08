@@ -13,4 +13,17 @@
 
 - [x] What database to select?
     > requirements: lightweight, easily deployable for containers, SQL, easy to use, modern \
-    > verdict: use redis for security and sessions, sqlite (or a modern equivalent) for analytics
+    > verdict: PostgreSQL
+
+## Security setup
+
+The backend now includes:
+
+- Hybrid auth: session-cookie auth for browser traffic and personal access tokens for API clients.
+- Role-based authorization (viewer/admin) for privileged endpoints.
+- Postgres-backed rate limiting and automatic temporary blacklisting on repeated abuse.
+- Admin blacklist management endpoints.
+
+Set these env vars before running backend:
+
+- `DB_URL` (Postgres URL, e.g. `postgres+asyncpg://...`)

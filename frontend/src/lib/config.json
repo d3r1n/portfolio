@@ -1,0 +1,31 @@
+{
+	"api": {
+		"baseUrl": "/api",
+		"music": {
+			"baseUrl": "/spotify",
+			"currentlyPlaying": "/currently-playing",
+			"lastPlayed": "/last-played",
+			"topTracks": "/top-tracks",
+			"topArtists": "/top-artists"
+		},
+		"books": {
+			"baseUrl": "/books",
+			"currentlyReading": "/currently-reading"
+		},
+		"projects": {
+			"baseUrl": "/projects",
+			"featured": "/featured"
+		},
+		"blog": {
+			"baseUrl": "/blog",
+			"posts": "/posts"
+		},
+		"locational-data": {
+			"baseUrl": "/locational-data",
+			"country": "/country",
+			"city": "/city",
+			"local-time": "/local-time",
+			"weather": "/weather"
+		}
+	}
+}

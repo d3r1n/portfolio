@@ -1,10 +1,14 @@
 :80 {
-    reverse_proxy /api/* backend:5000
     reverse_proxy * frontend:5173
 
+	handle /api/* {
+		uri strip_prefix /api
+		reverse_proxy backend:5000
+	}
 
-    handle /api/openapi.json {
-        rewrite * /openapi.json
-        reverse_proxy backend:5000
+
+    handle /db-admin/* {
+    	uri strip_prefix /db-admin
+        reverse_proxy pgweb:8081
     }
 }

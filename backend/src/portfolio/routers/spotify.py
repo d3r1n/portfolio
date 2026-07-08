@@ -1,13 +1,13 @@
 from typing import Annotated, Literal
 
-from aiohttp import ClientSession
-from fastapi import APIRouter, Depends, Query
-from fastapi.responses import JSONResponse, Response
+from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from ..deps import _get_spotify_api, get_client_session, get_spotify_service
+from portfolio.lib.security import require_viewer
+
+from ..deps import SpotifyService, get_spotify_service
 from ..lib.api.spotify_api import (
-	SpotifyApi,
 	SpotifyError,
 	TopArtist,
 	Track,
@@ -15,7 +15,7 @@ from ..lib.api.spotify_api import (
 
 # Set to None to be declared when the lifecycle of the route starts
 
-router = APIRouter(prefix="/spotify")
+router = APIRouter(prefix="/spotify", tags=["Spotify"], dependencies=[Depends(require_viewer)])
 
 
 class SpotifyErrorMessage(BaseModel):
@@ -40,84 +40,95 @@ spotify_error_response = {
 }
 
 
+def _spotify_error_message(error: SpotifyError) -> str:
+	if not error.args:
+		return "Unknown spotify service error"
+	detail = error.args[0]
+	if isinstance(detail, dict):
+		message = detail.get("message")
+		if isinstance(message, str):
+			return message
+	return "Unknown spotify service error"
+
+
 @router.get(
 	"/currently-playing",
+	response_model=Track,
 	responses={
 		204: {"description": "Nothing is currently playing on user's spotify"},
 		**spotify_error_response,
 	},
 )
 async def currently_playing(
-	service: Annotated[tuple[SpotifyApi, ClientSession], Depends(get_spotify_service)],
-) -> Track | None:
+	service: Annotated[SpotifyService, Depends(get_spotify_service)],
+) -> Track | Response:
 	"""Get the currently playing track from user's spotify"""
 	api, session = service
 
-	if api and session:
-		try:
-			track = await api.get_currently_playing(session)
-
-			if track is None:
-				return Response(status_code=204)  # 204 No Content
-
-			return track
-		except SpotifyError as e:
-			return JSONResponse(
-				{"error": "SpotifyError", "message": e.args[0]["message"]},
-				status_code=502,
-			)
+	try:
+		track = await api.get_currently_playing(session)
+		if track is None:
+			return Response(status_code=status.HTTP_204_NO_CONTENT)
+		return track
+	except SpotifyError as error:
+		return JSONResponse(
+			status_code=status.HTTP_502_BAD_GATEWAY,
+			content={"error": "SpotifyError", "message": _spotify_error_message(error)},
+		)
 
 
-@router.get("/last-played", responses=spotify_error_response)
+@router.get(
+	"/last-played",
+	response_model=Track,
+	responses={204: {"description": "No recent spotify track available"}, **spotify_error_response},
+)
 async def last_played(
-	service: Annotated[tuple[SpotifyApi, ClientSession], Depends(get_spotify_service)],
-) -> Track | None:
+	service: Annotated[SpotifyService, Depends(get_spotify_service)],
+) -> Track | Response:
 	"""Get the last played track from user's spotify"""
 	api, session = service
 
-	if api and session:
-		try:
-			track = await api.get_last_played_track(session)
-
-			return track
-		except SpotifyError as e:
-			return JSONResponse(
-				{"error": "SpotifyError", "message": e.args[0]["message"]},
-				status_code=502,
-			)
-
-
-@router.get("/top-{type}", responses=spotify_error_response)
-async def top_type(
-	service: Annotated[tuple[SpotifyApi, ClientSession], Depends(get_spotify_service)],
-	type: Literal["artists", "tracks"],
-	limit: int = Query(default=10, ge=1, le=50),
-) -> list[Track] | list[TopArtist] | None:
-	"""Get the top `type` from user's spotify"""
-	# check if type is correct
-	if type not in ["artists", "tracks"]:
+	try:
+		track = await api.get_last_played_track(session)
+		if track is None:
+			return Response(status_code=status.HTTP_204_NO_CONTENT)
+		return track
+	except SpotifyError as error:
 		return JSONResponse(
-			{
-				"error": "wrong path parameter",
-				"message": "path paramter `type` must one of `artists` or `tracks`",
-			},
-			status_code=400,  # 400 Bad Request
+			status_code=status.HTTP_502_BAD_GATEWAY,
+			content={"error": "SpotifyError", "message": _spotify_error_message(error)},
 		)
 
+
+@router.get(
+	"/top/{type}",
+	response_model=list[Track] | list[TopArtist],
+	responses={
+		204: {"description": "No top spotify data available"},
+		**spotify_error_response,
+	},
+)
+async def top_type(
+	service: Annotated[SpotifyService, Depends(get_spotify_service)],
+	type: Literal["artists", "tracks"],
+	limit: int = Query(default=10, ge=1, le=50),
+) -> list[Track] | list[TopArtist] | Response:
+	"""Get the top `type` from user's spotify"""
 	api, session = service
 
-	if api and session:
-		try:
-			if type == "artists":
-				top_user_artists = await api.get_top_month_artists(session, limit=limit)
+	try:
+		if type == "artists":
+			top_user_artists = await api.get_top_month_artists(session, limit=limit)
+			if top_user_artists is None:
+				return Response(status_code=status.HTTP_204_NO_CONTENT)
+			return top_user_artists
 
-				return top_user_artists
-			if type == "tracks":
-				top_user_tracks = await api.get_top_month_tracks(session, limit=limit)
-
-				return top_user_tracks
-		except SpotifyError as e:
-			return JSONResponse(
-				{"error": "SpotifyError", "message": e.args[0]["message"]},
-				status_code=502,
-			)
+		top_user_tracks = await api.get_top_month_tracks(session, limit=limit)
+		if top_user_tracks is None:
+			return Response(status_code=status.HTTP_204_NO_CONTENT)
+		return top_user_tracks
+	except SpotifyError as error:
+		return JSONResponse(
+			status_code=status.HTTP_502_BAD_GATEWAY,
+			content={"error": "SpotifyError", "message": _spotify_error_message(error)},
+		)

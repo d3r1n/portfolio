@@ -1,7 +1,6 @@
 <script lang="ts">
 	import '../styles/app.css';
 	import favicon from '$lib/assets/favicon.svg';
-	import Navbar from '$lib/components/navbar.svelte';
 
 	let { children } = $props();
 </script>
@@ -22,8 +21,7 @@
 </svelte:head>
 
 <div id="viewport-container" class="box-border flex w-screen justify-center">
-	<div id="content" class="w-[60%] pt-48">
-		<Navbar />
+	<div id="content" class="w-[60%] pt-16">
 		{@render children()}
 	</div>
 </div>

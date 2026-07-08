@@ -5,6 +5,8 @@
 
 	import { theme } from '$lib/utils/theme-toggle.svelte';
 
+	let props = $props();
+
 	type Page = {
 		name: string;
 		slug: string;
@@ -68,37 +70,32 @@
 	}
 </script>
 
-<div id="navbar" class="font-heading mb-8 flex w-full flex-row gap-8 text-xl">
-	<div>
-		<a href="/">derin eren</a>
-	</div>
+<div
+	id="navbar"
+	class={props.class +
+		'font-heading text-base-content/80 flex w-full content-start items-center gap-4 self-start text-xl'}
+>
+	{#each navPages as navPage}
+		<span>
+			<a
+				href={`/${navPage.slug}`}
+				class={(`/${navPage.slug}` === currentPage ? 'underline' : '') +
+					' decoration-2'}
+			>
+				[ {navPage.name} ]
+			</a>
+		</span>
+	{/each}
 
-	<div>•</div>
-
-	<div class="flex grow items-center justify-end gap-4">
-		{#each navPages as navPage}
-			<span>
-				<a
-					href={`/${navPage.slug}`}
-					class={(`/${navPage.slug}` === currentPage
-						? 'underline'
-						: '') + ' decoration-2'}
-				>
-					[ {navPage.name} ]
-				</a>
-			</span>
-		{/each}
-
-		<button
-			id="theme-button"
-			onclick={() => toggleTheme()}
-			class="transform-3d"
-		>
-			{#if theme.current === 'light'}
-				<Sun />
-			{:else}
-				<Moon />
-			{/if}
-		</button>
-	</div>
+	<button
+		id="theme-button"
+		onclick={() => toggleTheme()}
+		class="flex cursor-pointer items-center justify-center transform-3d"
+	>
+		{#if theme.current === 'light'}
+			<Sun />
+		{:else}
+			<Moon />
+		{/if}
+	</button>
 </div>

@@ -1,45 +1,73 @@
 services:
-    frontend:
-        build:
-            context: ./frontend
-            dockerfile: Dockerfile.dev
-        volumes:
-            - ./frontend:/app
-            - /app/node_modules # Do not let host modules overwrite container modules
-            - /app/.svelte-kit # Keep internal build artifacts in the container
-        depends_on:
-            - backend
-        networks:
-            - portfolio-net
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./frontend:/app:z
+      - /app/node_modules # Do not let host modules overwrite container modules
+      - /app/.svelte-kit # Keep internal build artifacts in the container
+    depends_on:
+      - backend
+    networks:
+      - portfolio-net
 
-    backend:
-        build:
-            context: ./backend
-            dockerfile: Dockerfile.dev
-        volumes:
-            - ./backend:/app
-            - /app/.venv
-        networks:
-            - portfolio-net
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    env_file:
+      - ./.env
+    volumes:
+      - ./backend:/app:z
+      - /app/.venv
+    networks:
+      - portfolio-net
+    depends_on:
+      - db
 
-    caddy:
-        image: caddy:latest
-        ports:
-            - "80:80"
-            - "443:443"
-        volumes:
-            - ./Caddyfile:/etc/caddy/Caddyfile
-            - caddy_data:/data
-            - caddy_config:/config
-        depends_on:
-            - frontend
-        networks:
-            - portfolio-net
+  caddy:
+    image: caddy:latest
+    ports:
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:z
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+    networks:
+      - portfolio-net
 
+  db:
+    image: postgres:16-alpine
+    container_name: ${POSTGRES_DB}
+    # Pass the Postgres setup variables into the DB container
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  pgweb:
+    image: sosedoff/pgweb:latest
+    container_name: portfolio_pgweb
+    restart: always
+    environment:
+      # Tell pgweb how to connect internally to the Postgres service
+      - PGWEB_DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable
+      # Http Basic Auth so random people online can't access your GUI
+      - PGWEB_AUTH_USER=${PGWEB_USER}
+      - PGWEB_AUTH_PASS=${PGWEB_PASSWORD}
+    depends_on:
+      - db
 networks:
-    portfolio-net:
-        driver: bridge
+  portfolio-net:
+    driver: bridge
 
 volumes:
-    caddy_data:
-    caddy_config:
+  db_data:
+  caddy_data:
+  caddy_config:

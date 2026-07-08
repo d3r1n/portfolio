@@ -4,4 +4,4 @@ from loguru import logger
 
 
 def setup_logger() -> None:
-	logger.add(sys.stderr, level="INFO")
+	_ = logger.add(sys.stderr, level="INFO")

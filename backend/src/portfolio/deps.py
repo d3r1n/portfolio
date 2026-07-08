@@ -1,6 +1,5 @@
 from functools import lru_cache
-from os import environ
-from typing import Annotated, Literal
+from typing import Annotated
 
 from aiohttp import ClientSession
 from fastapi import Depends
@@ -13,16 +12,7 @@ from .lib.util.config import Config, load_config
 # Config Management
 @lru_cache
 def get_config() -> Config:
-	"""
-	Handles DEPLOYMENT_MODE safely.
-	Converts to uppercase to handle 'dev' vs 'DEV'.
-	"""
-	mode = environ.get("DEPLOYMENT_MODE", "DEV").upper()
-
-	if mode not in ["DEV", "PROD"]:
-		mode = "DEV"
-
-	return load_config(mode)  # type: ignore
+	return load_config()
 
 
 # Session Management
@@ -35,11 +25,11 @@ class ClientSessionManager:
 			raise RuntimeError("ClientSession not initialized. Ensure lifespan is set in main.py")
 		return self._session
 
-	async def init(self):
+	async def init(self) -> None:
 		if self._session is None:
 			self._session = ClientSession()
 
-	async def close(self):
+	async def close(self) -> None:
 		if self._session:
 			await self._session.close()
 			self._session = None
@@ -56,21 +46,25 @@ def _get_spotify_api() -> SpotifyApi:
 
 
 @lru_cache
-def _get_hardcover_api() -> HardcoverApi:
+def get_hardcover_api() -> HardcoverApi:
 	"""Singleton provider for HardcoverApi."""
 	config = get_config()
 	return HardcoverApi(config)
 
 
+type SpotifyService = tuple[SpotifyApi, ClientSession]
+type HardcoverService = tuple[HardcoverApi, ClientSession]
+
+
 async def get_spotify_service(
 	api: Annotated[SpotifyApi, Depends(_get_spotify_api)],
 	session: Annotated[ClientSession, Depends(get_client_session)],
-):
+) -> SpotifyService:
 	return api, session
 
 
 async def get_hardcover_service(
-	api: Annotated[HardcoverApi, Depends(_get_hardcover_api)],
+	api: Annotated[HardcoverApi, Depends(get_hardcover_api)],
 	session: Annotated[ClientSession, Depends(get_client_session)],
-):
+) -> HardcoverService:
 	return api, session

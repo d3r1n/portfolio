@@ -3,7 +3,7 @@
 @plugin 'daisyui/index.js' {
 	themes:
 		wireframe --default,
-		business --prefersdark;
+		black --prefersdark;
 }
 
 @theme {

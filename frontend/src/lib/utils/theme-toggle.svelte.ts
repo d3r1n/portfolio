@@ -8,7 +8,7 @@ class ThemeStore {
 
 	private themes = {
 		light: 'wireframe',
-		dark: 'business'
+		dark: 'black'
 	};
 
 	constructor() {

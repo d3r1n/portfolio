@@ -156,7 +156,7 @@ class SpotifyApi:
 			duration_ms=json_data["item"]["duration_ms"],
 			album_name=json_data["item"]["album"]["name"],
 			album_image=json_data["item"]["album"]["images"][0]["url"],
-			artists=map(_format_artists, json_data["item"]["artists"]),
+			artists=list(map(_format_artists, json_data["item"]["artists"])),
 			track_url=f"https://open.spotify.com/track/{json_data['item']['uri'].split(':')[2]}",
 		)
 
@@ -200,7 +200,7 @@ class SpotifyApi:
 			name=track0["name"],
 			album_name=track0["album"]["name"],
 			album_image=track0["album"]["images"][0]["url"],
-			artists=map(_format_artists, track0["artists"]),
+			artists=list(map(_format_artists, track0["artists"])),
 			track_url=f"https://open.spotify.com/track/{track0['uri'].split(':')[2]}",
 		)
 

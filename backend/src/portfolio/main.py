@@ -2,11 +2,11 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 from .deps import get_client_session, get_config
 from .lib.util import logger
-from .routers import books, spotify
+from .routers import auth_router, books_router, projects_router, spotify_router
 
 
 @asynccontextmanager
@@ -23,8 +23,10 @@ config = get_config()
 
 app = FastAPI(root_path="/api", lifespan=lifespan)
 
-app.include_router(spotify.router)
-app.include_router(books.router)
+app.include_router(books_router)
+app.include_router(projects_router)
+app.include_router(spotify_router)
+app.include_router(auth_router)
 
 app.add_middleware(
 	CORSMiddleware,
@@ -34,7 +36,10 @@ app.add_middleware(
 )
 
 
+class HealthcheckResponse(BaseModel):
+	condition: str
+
+
 @app.get("/healthcheck")
-async def healthcheck():
-	# TODO: implement proper healthcheck
-	return JSONResponse({"condition": "system up"}, status_code=200)
+async def healthcheck() -> HealthcheckResponse:
+	return HealthcheckResponse(condition="system up")
