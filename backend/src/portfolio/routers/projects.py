@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field, HttpUrl
 
-from portfolio.lib.security import require_viewer
+from ..lib.security import require_viewer
 
 router = APIRouter(prefix="/projects", tags=["Projects"], dependencies=[Depends(require_viewer)])
 

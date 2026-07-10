@@ -1,5 +1,6 @@
 {
-	"languages": {
+	"format_on_save": "on",
+ "languages": {
 		"CSS": {
 			"language_servers": [
 				"tailwindcss-intellisense-css",

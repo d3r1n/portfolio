@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from typing import Annotated, TypeVar
 
 from aiohttp import ClientSession
+from loguru import logger
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, validate_call
 
 from ..util.config import Config
@@ -149,6 +150,8 @@ class SpotifyApi:
 
 		json_data = await response.json()
 
+		logger.debug(f"Currently playing track data: {json_data}")
+
 		return Track(
 			name=json_data["item"]["name"],
 			is_playing=json_data["is_playing"],
@@ -195,6 +198,8 @@ class SpotifyApi:
 		json_data = await response.json()
 
 		track0 = json_data["items"][0]["track"]
+
+		logger.debug(f"Last played track data: {json_data}")
 
 		return Track(
 			name=track0["name"],

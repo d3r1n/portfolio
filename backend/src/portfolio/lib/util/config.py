@@ -1,7 +1,7 @@
+from functools import lru_cache
 from secrets import token_hex
 from typing import Literal
 
-from loguru import logger
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -23,6 +23,8 @@ class ApiConfig(BaseModel):
 	# Pydantic-settings natively handles parsing comma-separated strings into tuples
 	# if you type hint it as a tuple! No custom parsers needed.
 	allowed_origins: tuple[str, ...] = Field(default=("*",))
+	allowed_methods: tuple[str, ...] = Field(default=("*",))
+	allowed_headers: tuple[str, ...] = Field(default=("*",))
 
 
 class SecurityConfig(BaseModel):
@@ -34,6 +36,13 @@ class SecurityConfig(BaseModel):
 	jwt_secret_key: str = Field(default_factory=lambda: token_hex(32), frozen=True)
 	jwt_algorithm: str = Field(default="HS256", frozen=True)
 	jwt_viewer_token_expire_minutes: int = Field(default=30, ge=1, le=120, frozen=True)
+	jwt_admin_token_expire_minutes: int = Field(default=60, ge=5, le=1440, frozen=True)
+
+class AdminConfig(BaseModel):
+	user: str
+	password: str
+	email: str
+
 
 
 class Config(BaseSettings):
@@ -53,8 +62,14 @@ class Config(BaseSettings):
 
 	api: ApiConfig = Field(default_factory=ApiConfig)
 	security: SecurityConfig = Field(default_factory=SecurityConfig)
+	admin: AdminConfig
 
 
+@lru_cache
 def load_config() -> Config:
-	"""Load the configuration from environment variables and return a Config object."""
+	"""Load the configuration from environment variables and return a Config object.
+
+	Cached so that repeated calls across modules return the same instance,
+	which matters for fields like `jwt_secret_key` whose default is randomly generated.
+	"""
 	return Config()  # pyright: ignore[reportCallIssue]

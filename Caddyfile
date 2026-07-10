@@ -1,14 +1,19 @@
 :80 {
     reverse_proxy * frontend:5173
 
-	handle /api/* {
-		uri strip_prefix /api
-		reverse_proxy backend:5000
-	}
-
+    handle /api/* {
+        uri strip_prefix /api
+        reverse_proxy backend:5000
+    }
 
     handle /db-admin/* {
-    	uri strip_prefix /db-admin
-        reverse_proxy pgweb:8081
+        route {
+            forward_auth backend:5000 {
+                uri /api/auth/admin-verify
+                copy_headers Authorization Cookie
+            }
+            uri strip_prefix /db-admin
+            reverse_proxy pgweb:8081
+        }
     }
 }

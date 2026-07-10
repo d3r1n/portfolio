@@ -4,14 +4,14 @@ from typing import Annotated
 from aiohttp import ClientSession
 from fastapi import Depends
 
-from .lib.api.hardcover_api import HardcoverApi
-from .lib.api.spotify_api import SpotifyApi
+from .lib.integrations.hardcover_api import HardcoverApi
+from .lib.integrations.spotify_api import SpotifyApi
 from .lib.util.config import Config, load_config
 
 
 # Config Management
-@lru_cache
 def get_config() -> Config:
+	# load_config() is itself cached, so this is just a Depends()-friendly alias.
 	return load_config()
 
 
@@ -46,7 +46,7 @@ def _get_spotify_api() -> SpotifyApi:
 
 
 @lru_cache
-def get_hardcover_api() -> HardcoverApi:
+def _get_hardcover_api() -> HardcoverApi:
 	"""Singleton provider for HardcoverApi."""
 	config = get_config()
 	return HardcoverApi(config)
@@ -64,7 +64,7 @@ async def get_spotify_service(
 
 
 async def get_hardcover_service(
-	api: Annotated[HardcoverApi, Depends(get_hardcover_api)],
+	api: Annotated[HardcoverApi, Depends(_get_hardcover_api)],
 	session: Annotated[ClientSession, Depends(get_client_session)],
 ) -> HardcoverService:
 	return api, session

@@ -3,5 +3,11 @@ import sys
 from loguru import logger
 
 
-def setup_logger() -> None:
-	_ = logger.add(sys.stderr, level="INFO")
+def setup_logging():
+	logger.remove()
+
+	logger.add(
+		sys.stderr,
+		level="INFO",
+		enqueue=True,
+	)

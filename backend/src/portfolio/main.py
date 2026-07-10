@@ -2,17 +2,23 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from loguru import logger
 from pydantic import BaseModel
 
 from .deps import get_client_session, get_config
-from .lib.util import logger
+from .lib.database import init_db
+from .lib.util.logger import setup_logging
 from .routers import auth_router, books_router, projects_router, spotify_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 	await get_client_session.init()
-	logger.setup_logger()
+	setup_logging()
+
+	logger.info("Initializing database...")
+
+	await init_db()
 
 	yield
 

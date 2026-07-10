@@ -1,15 +1,13 @@
 from typing import Annotated
 
-from aiohttp import ClientSession
 from fastapi import APIRouter, Depends, Response, status
 from fastapi.responses import JSONResponse
 from loguru import logger
 from pydantic import BaseModel
 
-from portfolio.lib.security import require_viewer
-
-from ..deps import get_client_session, get_hardcover_api
-from ..lib.api.hardcover_api import HardcoverApi, HardcoverBook, HardcoverError
+from ..deps import HardcoverService, get_hardcover_service
+from ..lib.integrations.hardcover_api import HardcoverBook, HardcoverError
+from ..lib.security import require_viewer
 
 router = APIRouter(prefix="/books", tags=["Books"], dependencies=[Depends(require_viewer)])
 
@@ -52,9 +50,10 @@ def _hardcover_error_message(error: HardcoverError) -> str:
 	responses={204: {"description": "No active currently-reading book"}, **hardcover_error_response},
 )
 async def currently_reading(
-	api: Annotated[HardcoverApi, Depends(get_hardcover_api)],
-	session: Annotated[ClientSession, Depends(get_client_session)],
+	service: Annotated[HardcoverService, Depends(get_hardcover_service)],
 ) -> HardcoverBook | Response:
+	api, session = service
+
 	try:
 		book = await api.get_currently_reading_book(session)
 

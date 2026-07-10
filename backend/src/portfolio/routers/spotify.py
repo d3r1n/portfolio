@@ -4,14 +4,13 @@ from fastapi import APIRouter, Depends, Query, Response, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from portfolio.lib.security import require_viewer
-
 from ..deps import SpotifyService, get_spotify_service
-from ..lib.api.spotify_api import (
+from ..lib.integrations.spotify_api import (
 	SpotifyError,
 	TopArtist,
 	Track,
 )
+from ..lib.security import require_viewer
 
 # Set to None to be declared when the lifecycle of the route starts
 
