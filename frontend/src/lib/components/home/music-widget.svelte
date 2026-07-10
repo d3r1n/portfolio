@@ -3,30 +3,39 @@
 	import { Music } from '@lucide/svelte';
 	import { animate, stagger } from 'animejs';
 	import {
-		getCurrentlyPlayingTrack,
-		getLastPlayedTrack,
+		currentlyPlayingSpotify,
+		lastPlayedSpotify,
 		type Track
-	} from '$lib/api/client';
+	} from '$lib/api';
+
+	const REFRESH_INTERVAL_MS = 30_000;
 
 	let musicData = $state<Track | null>(null);
 	let loading = $state(true);
 	let barsContainer = $state<HTMLElement | null>(null);
-	let animation: any = null;
+	let animation: ReturnType<typeof animate> | null = null;
 
 	async function fetchMusic() {
-		try {
-			const currentlyPlaying = await getCurrentlyPlayingTrack();
-			musicData = currentlyPlaying ?? (await getLastPlayedTrack());
+		const playing = await currentlyPlayingSpotify();
+		if (playing.error)
+			console.error(
+				'Error fetching currently-playing track:',
+				playing.error
+			);
 
-			// Handle animation in a microtask to ensure DOM is updated
-			queueMicrotask(() => {
-				updateAnimation();
-			});
-		} catch (error) {
-			console.error('Error fetching music data:', error);
-		} finally {
-			loading = false;
+		if (playing.response?.status === 200 && playing.data) {
+			musicData = playing.data;
+		} else {
+			const last = await lastPlayedSpotify();
+			if (last.error)
+				console.error('Error fetching last-played track:', last.error);
+			musicData =
+				last.response?.status === 200 ? (last.data ?? null) : null;
 		}
+
+		// Handle animation in a microtask to ensure DOM is updated
+		queueMicrotask(() => updateAnimation());
+		loading = false;
 	}
 
 	function updateAnimation() {
@@ -51,7 +60,7 @@
 
 	onMount(() => {
 		fetchMusic();
-		const interval = setInterval(fetchMusic, 30000);
+		const interval = setInterval(fetchMusic, REFRESH_INTERVAL_MS);
 		return () => {
 			clearInterval(interval);
 			if (animation) animation.pause();

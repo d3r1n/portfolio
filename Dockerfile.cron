@@ -1,0 +1,16 @@
+# Use the ultra-lightweight Alpine base image
+FROM alpine:3.20
+
+# Declare build-time configuration parameters
+ARG POSTGRES_USER
+ARG POSTGRES_DB
+ARG POSTGRES_HOST=database
+
+# Install only the lightweight postgresql client utility
+RUN apk add --no-cache postgresql-client
+
+# Declaratively write the midnight cron task using the build arguments
+RUN echo "0 0 * * * psql -h ${POSTGRES_HOST} -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c \"DELETE FROM admin_sessions WHERE expires_at <= NOW() AT TIME ZONE 'UTC';\"" > /var/spool/cron/crontabs/root
+
+# Boot up the built-in, lightweight busybox cron daemon in the foreground
+CMD ["crond", "-f", "-l", "2"]

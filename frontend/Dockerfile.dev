@@ -13,5 +13,7 @@ COPY . .
 
 EXPOSE 5173
 
+ENV DEV_ENV=docker
+
 # Vite needs --host to accept connections from the Caddy proxy
 CMD ["bun", "run", "dev", "--", "--host", "0.0.0.0"]

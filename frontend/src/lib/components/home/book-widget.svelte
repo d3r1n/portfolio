@@ -1,28 +1,25 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { BookOpen } from '@lucide/svelte';
-	import {
-		getCurrentlyReadingBook,
-		type HardcoverBook
-	} from '$lib/api/client';
+	import { currentlyReadingBooks, type HardcoverBook } from '$lib/api';
+
+	const REFRESH_INTERVAL_MS = 60_000;
 
 	let bookData = $state<HardcoverBook | null>(null);
 	let loading = $state(true);
 
 	async function fetchBook() {
-		try {
-			bookData = await getCurrentlyReadingBook();
-		} catch (error) {
-			console.error('Error fetching book data:', error);
-			bookData = null;
-		} finally {
-			loading = false;
-		}
+		const { data, error, response } = await currentlyReadingBooks();
+		if (error) console.error('Error fetching book data:', error);
+
+		// A 204 means there's simply no active book right now — not an error.
+		bookData = response?.status === 200 ? (data ?? null) : null;
+		loading = false;
 	}
 
 	onMount(() => {
 		fetchBook();
-		const interval = setInterval(fetchBook, 60000);
+		const interval = setInterval(fetchBook, REFRESH_INTERVAL_MS);
 		return () => clearInterval(interval);
 	});
 </script>
@@ -58,7 +55,9 @@
 					class="h-full w-full object-cover"
 				/>
 			{:else}
-				<div class="bg-base-content/10 flex h-full w-full items-center justify-center">
+				<div
+					class="bg-base-content/10 flex h-full w-full items-center justify-center"
+				>
 					<BookOpen size={16} class="text-base-content/50" />
 				</div>
 			{/if}
@@ -81,7 +80,9 @@
 			<div class="font-body text-base-content/70 truncate text-xs">
 				{bookData.author}
 				{#if bookData.pages !== null && bookData.pages !== undefined}
-					<span class="text-base-content/50"> • {bookData.pages} pages</span>
+					<span class="text-base-content/50">
+						• {bookData.pages} pages</span
+					>
 				{/if}
 			</div>
 
@@ -92,7 +93,9 @@
 						value={bookData.progress}
 						max="100"
 					></progress>
-					<span class="font-body text-base-content/50 w-9 text-[10px]">
+					<span
+						class="font-body text-base-content/50 w-9 text-[10px]"
+					>
 						{Math.round(bookData.progress)}%
 					</span>
 				</div>

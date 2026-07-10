@@ -1,9 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import {
-		getFeaturedProjects,
-		type FeaturedProject
-	} from '$lib/api/client';
+	import { featuredProjects, type FeaturedProject } from '$lib/api';
 
 	let { limit = 2, class: className = '' } = $props<{
 		projects?: FeaturedProject[];
@@ -15,7 +12,9 @@
 	let visibleProjects = $derived(projects ? projects.slice(0, limit) : []);
 
 	onMount(async () => {
-		projects = await getFeaturedProjects(limit);
+		const { data, error } = await featuredProjects({ query: { limit } });
+		if (error) console.error('Error fetching featured projects:', error);
+		projects = data ?? null;
 	});
 </script>
 

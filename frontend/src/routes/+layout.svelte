@@ -1,5 +1,7 @@
 <script lang="ts">
 	import '../styles/app.css';
+	// Registers the viewer-token auth callback on the API client before any widget can call it.
+	import '$lib/viewer-auth';
 	import favicon from '$lib/assets/favicon.svg';
 
 	let { children } = $props();

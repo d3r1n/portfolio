@@ -52,10 +52,6 @@ services:
       - db_data:/var/lib/postgresql/data
     networks:
       - portfolio-net
-    labels:
-      - "ofelia.enabled=true"
-      - "ofelia.job-exec.purge-sessions.schedule=@daily"
-      - 'ofelia.job-exec.purge-sessions.command=psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c "DELETE FROM admin_sessions WHERE expires_at <= NOW() AT TIME ZONE ''UTC'';"'
 
   pgweb:
     image: sosedoff/pgweb:latest
@@ -67,17 +63,22 @@ services:
     depends_on:
       - database
 
-  # cron-cleanup:
-  #   image: mcuadros/ofelia:latest
-  #   # Crucial: Instruct Ofelia to run as a daemon searching for Docker labels
-  #   command: daemon --docker
-  #   volumes:
-  #     - /var/run/docker.sock:/var/run/docker.sock:ro
-  #   depends_on:
-  #     - database
-  #   networks:
-  #     - portfolio-net
-  #   restart: unless-stopped
+  cron-cleanup:
+    build:
+      context: .
+      dockerfile: Dockerfile.cron
+      args:
+        POSTGRES_USER: ${POSTGRES_USER}
+        POSTGRES_DB: ${POSTGRES_DB}
+        POSTGRES_HOST: database
+    container_name: portfolio_cron_worker
+    depends_on:
+      - database
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      - portfolio-net
+    restart: unless-stopped
 
 networks:
   portfolio-net:
