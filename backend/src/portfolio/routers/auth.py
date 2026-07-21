@@ -2,16 +2,16 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
-from pydantic import BaseModel
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from portfolio.lib.security.jwt import JWT_ADMIN_TOKEN_EXPIRE_MINUTES
+from portfolio.security.jwt import JWT_ADMIN_TOKEN_EXPIRE_MINUTES
 
-from ..lib.database import get_async_session
-from ..lib.security import (
-	Admin,
-	AdminSession,
+from ..core.config import load_config
+from ..core.database import get_async_session
+from ..models import Admin, AdminSession
+from ..schemas.auth import TokenResponse
+from ..security import (
 	create_admin_token,
 	create_viewer_token,
 	get_client_ip,
@@ -19,7 +19,6 @@ from ..lib.security import (
 	require_admin,
 	verify_password,
 )
-from ..lib.util.config import load_config
 
 config = load_config()
 
@@ -29,11 +28,6 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 # router, since stacking a router-wide dependency with a route override would count
 # (and log) the same request twice.
 auth_rate_limit = Depends(rate_limit(config.security.auth_rate_limit_per_minute))
-
-
-class TokenResponse(BaseModel):
-	access_token: str
-	token_type: str = "bearer"
 
 
 @router.post("/viewer-session", response_model=TokenResponse, dependencies=[auth_rate_limit])

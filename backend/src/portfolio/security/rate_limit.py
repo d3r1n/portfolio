@@ -8,11 +8,11 @@ from redis.asyncio import Redis
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from ...deps import get_redis
-from ..database import get_async_session
-from ..util.config import load_config
+from ..core.config import load_config
+from ..core.database import get_async_session
+from ..deps import get_redis
+from ..models import BlacklistedIp
 from .admin import get_client_ip
-from .models import BlacklistedIp
 
 config = load_config()
 

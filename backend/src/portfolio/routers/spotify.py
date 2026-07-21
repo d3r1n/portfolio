@@ -2,24 +2,16 @@ from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Query, Response, status
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
 
 from ..deps import SpotifyService, get_spotify_service
-from ..lib.integrations.spotify_api import (
-	SpotifyError,
-	TopArtist,
-	Track,
-)
-from ..lib.security import rate_limit, require_viewer
+from ..integrations.spotify.client import SpotifyError
+from ..integrations.spotify.schemas import TopArtist, Track
+from ..schemas.spotify import SpotifyErrorMessage
+from ..security import rate_limit, require_viewer
 
 # Set to None to be declared when the lifecycle of the route starts
 
 router = APIRouter(prefix="/spotify", tags=["Spotify"], dependencies=[Depends(require_viewer), Depends(rate_limit())])
-
-
-class SpotifyErrorMessage(BaseModel):
-	error: str
-	message: str
 
 
 # spotify error response for OpenAPI

@@ -5,9 +5,9 @@ from aiohttp import ClientSession
 from fastapi import Depends
 from redis.asyncio import Redis
 
-from .lib.integrations.hardcover_api import HardcoverApi
-from .lib.integrations.spotify_api import SpotifyApi
-from .lib.util.config import Config, load_config
+from .core.config import Config, load_config
+from .integrations.hardcover.client import HardcoverApi
+from .integrations.spotify.client import SpotifyApi
 
 
 # Config Management

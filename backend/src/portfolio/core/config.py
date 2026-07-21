@@ -46,11 +46,11 @@ class SecurityConfig(BaseModel):
 	jwt_viewer_token_expire_minutes: int = Field(default=30, ge=1, le=120, frozen=True)
 	jwt_admin_token_expire_minutes: int = Field(default=60, ge=5, le=1440, frozen=True)
 
+
 class AdminConfig(BaseModel):
 	user: str
 	password: str
 	email: str
-
 
 
 class Config(BaseSettings):

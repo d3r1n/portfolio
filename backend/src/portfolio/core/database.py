@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlmodel import SQLModel, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from .util.config import load_config
+from .config import load_config
 
 DATABASE_URL = load_config().db_url
 
@@ -33,8 +33,9 @@ async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def init_admin_user():
-	from .security import Admin, hash_password
-	from .util.config import load_config
+	from ..models import Admin
+	from ..security import hash_password
+	from .config import load_config
 
 	config = load_config()
 

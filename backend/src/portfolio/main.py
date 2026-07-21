@@ -5,9 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 from pydantic import BaseModel
 
+from .core.database import init_db
+from .core.logger import setup_logging
 from .deps import get_client_session, get_config, get_redis
-from .lib.database import init_db
-from .lib.util.logger import setup_logging
 from .routers import auth_router, books_router, projects_router, spotify_router
 
 

@@ -3,19 +3,14 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Response, status
 from fastapi.responses import JSONResponse
 from loguru import logger
-from pydantic import BaseModel
 
 from ..deps import HardcoverService, get_hardcover_service
-from ..lib.integrations.hardcover_api import HardcoverBook, HardcoverError
-from ..lib.security import rate_limit, require_viewer
+from ..integrations.hardcover.client import HardcoverError
+from ..integrations.hardcover.schemas import HardcoverBook
+from ..schemas.books import HardcoverErrorMessage
+from ..security import rate_limit, require_viewer
 
 router = APIRouter(prefix="/books", tags=["Books"], dependencies=[Depends(require_viewer), Depends(rate_limit())])
-
-
-class HardcoverErrorMessage(BaseModel):
-	error: str
-	message: str
-
 
 hardcover_error_response = {
 	502: {

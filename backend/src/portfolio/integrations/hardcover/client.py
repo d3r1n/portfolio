@@ -1,20 +1,11 @@
 from aiohttp import ClientSession
 from loguru import logger
-from pydantic import BaseModel, HttpUrl, ValidationError
+from pydantic import ValidationError
 
-from ..util.config import Config
+from ...core.config import Config
+from .schemas import HardcoverBook
 
 _STATUS_SUCCESS = 200
-
-
-class HardcoverBook(BaseModel):
-	title: str
-	author: str
-	pages: int | None = None
-	image_url: HttpUrl | None = None
-	image_dominant_color: str | None = None
-	progress: float | None = None
-	link: HttpUrl
 
 
 class HardcoverError(Exception):

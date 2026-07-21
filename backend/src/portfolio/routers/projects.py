@@ -1,28 +1,11 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
-from pydantic import BaseModel, Field, HttpUrl
 
-from ..lib.security import rate_limit, require_viewer
+from ..schemas.projects import FeaturedProject, ProjectLink
+from ..security import rate_limit, require_viewer
 
 router = APIRouter(prefix="/projects", tags=["Projects"], dependencies=[Depends(require_viewer), Depends(rate_limit())])
-
-
-class ProjectLink(BaseModel):
-	label: str
-	href: HttpUrl
-	external: bool = True
-
-
-class FeaturedProject(BaseModel):
-	name: str
-	description: str
-	year: str | None = None
-	status: str | None = None
-	tags: list[str] = Field(default_factory=list)
-	href: HttpUrl
-	links: list[ProjectLink] = Field(default_factory=list)
-	accent: str | None = None
 
 
 _FEATURED_PROJECTS: tuple[FeaturedProject, ...] = (

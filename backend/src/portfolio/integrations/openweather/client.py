@@ -2,24 +2,12 @@ from typing import Annotated
 
 from aiohttp import ClientSession
 from loguru import logger
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, validate_call
+from pydantic import ConfigDict, Field, ValidationError, validate_call
 
-from ..util.config import Config
+from ...core.config import Config
+from .schemas import CurrentWeather
 
 _STATUS_OK = 200
-
-
-class CurrentWeather(BaseModel):
-	"""Current conditions at a single coordinate, per OpenWeatherMap's `/weather` endpoint."""
-
-	temperature: float
-	feels_like: float
-	condition: str
-	description: str
-	icon: str
-	humidity: int
-	wind_speed: float
-	location_name: str
 
 
 class WeatherError(Exception):
