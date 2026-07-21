@@ -15,11 +15,20 @@ from ..lib.security import (
 	create_admin_token,
 	create_viewer_token,
 	get_client_ip,
+	rate_limit,
 	require_admin,
 	verify_password,
 )
+from ..lib.util.config import load_config
+
+config = load_config()
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+# Each route below sets its own budget explicitly rather than inheriting one from the
+# router, since stacking a router-wide dependency with a route override would count
+# (and log) the same request twice.
+auth_rate_limit = Depends(rate_limit(config.security.auth_rate_limit_per_minute))
 
 
 class TokenResponse(BaseModel):
@@ -27,7 +36,7 @@ class TokenResponse(BaseModel):
 	token_type: str = "bearer"
 
 
-@router.post("/viewer-session", response_model=TokenResponse)
+@router.post("/viewer-session", response_model=TokenResponse, dependencies=[auth_rate_limit])
 async def generate_viewer_session() -> TokenResponse:
 	"""
 	Endpoint called by the frontend on the visitor's first initial page load.
@@ -40,7 +49,7 @@ async def generate_viewer_session() -> TokenResponse:
 SECONDS_PER_MINUTE = 60  # Constant for cookie expiration
 
 
-@router.post("/admin-login")
+@router.post("/admin-login", dependencies=[Depends(rate_limit(10))])  # brute-force target — tighter budget
 async def admin_login(
 	request: Request,
 	response: Response,
@@ -91,8 +100,8 @@ async def admin_login(
 	return {"access_token": token, "token_type": "bearer"}
 
 
-@router.get("/admin-verify")
-async def admin_verify(admin: Admin = Depends(require_admin)):
+@router.get("/admin-verify", dependencies=[auth_rate_limit])
+async def admin_verify(_: Admin = Depends(require_admin)):
 	"""
 	Endpoint to verify the validity of an admin token.
 	Returns the admin's username and email if valid.

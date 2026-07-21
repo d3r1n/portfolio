@@ -25,12 +25,22 @@ services:
       - portfolio-net
     depends_on:
       - database
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    # Pure rate-limiter cache — losing it on restart just resets counters/blacklists, so no volume.
+    networks:
+      - portfolio-net
 
   caddy:
     image: caddy:latest
     ports:
       - "8080:80"
       - "8443:443"
+    environment:
+      # Lets the Caddyfile tag its internal forward_auth call as a trusted caller.
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:z
       - caddy_data:/data
@@ -42,7 +52,6 @@ services:
 
   database:
     image: postgres:16-alpine
-    container_name: postgres_db
     # Pass the Postgres setup variables into the DB container
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -55,13 +64,14 @@ services:
 
   pgweb:
     image: sosedoff/pgweb:latest
-    container_name: portfolio_pgweb
     restart: always
     environment:
       # Tell pgweb how to connect internally to the Postgres service
       - PGWEB_DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}?sslmode=disable
     depends_on:
       - database
+    networks:
+      - portfolio-net
 
   cron-cleanup:
     build:
@@ -71,7 +81,6 @@ services:
         POSTGRES_USER: ${POSTGRES_USER}
         POSTGRES_DB: ${POSTGRES_DB}
         POSTGRES_HOST: database
-    container_name: portfolio_cron_worker
     depends_on:
       - database
     environment:

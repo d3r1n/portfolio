@@ -7,9 +7,9 @@ from pydantic import BaseModel
 
 from ..deps import HardcoverService, get_hardcover_service
 from ..lib.integrations.hardcover_api import HardcoverBook, HardcoverError
-from ..lib.security import require_viewer
+from ..lib.security import rate_limit, require_viewer
 
-router = APIRouter(prefix="/books", tags=["Books"], dependencies=[Depends(require_viewer)])
+router = APIRouter(prefix="/books", tags=["Books"], dependencies=[Depends(require_viewer), Depends(rate_limit())])
 
 
 class HardcoverErrorMessage(BaseModel):

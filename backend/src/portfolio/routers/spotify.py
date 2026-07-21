@@ -10,11 +10,11 @@ from ..lib.integrations.spotify_api import (
 	TopArtist,
 	Track,
 )
-from ..lib.security import require_viewer
+from ..lib.security import rate_limit, require_viewer
 
 # Set to None to be declared when the lifecycle of the route starts
 
-router = APIRouter(prefix="/spotify", tags=["Spotify"], dependencies=[Depends(require_viewer)])
+router = APIRouter(prefix="/spotify", tags=["Spotify"], dependencies=[Depends(require_viewer), Depends(rate_limit())])
 
 
 class SpotifyErrorMessage(BaseModel):

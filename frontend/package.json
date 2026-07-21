@@ -4,6 +4,7 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
+		"codegen": "deno run -A src/scripts/generate-api.ts",
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
@@ -16,12 +17,11 @@
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
 		"@hey-api/openapi-ts": "^0.99.0",
-		"@hey-api/vite-plugin": "^0.3.2",
 		"@sveltejs/adapter-auto": "^7.0.1",
 		"@sveltejs/kit": "^2.57.0",
 		"@sveltejs/vite-plugin-svelte": "^7.0.0",
 		"@tailwindcss/vite": "^4.2.4",
-		"@types/bun": "^1.3.14",
+		"@types/node": "^24.0.0",
 		"eslint": "^10.2.1",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-svelte": "^3.17.1",

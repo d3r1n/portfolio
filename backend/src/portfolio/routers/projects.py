@@ -3,9 +3,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field, HttpUrl
 
-from ..lib.security import require_viewer
+from ..lib.security import rate_limit, require_viewer
 
-router = APIRouter(prefix="/projects", tags=["Projects"], dependencies=[Depends(require_viewer)])
+router = APIRouter(prefix="/projects", tags=["Projects"], dependencies=[Depends(require_viewer), Depends(rate_limit())])
 
 
 class ProjectLink(BaseModel):

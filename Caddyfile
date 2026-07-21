@@ -11,6 +11,7 @@
             forward_auth backend:5000 {
                 uri /api/auth/admin-verify
                 copy_headers Authorization Cookie
+                header_up X-Api-Key {$INTERNAL_API_KEY}
             }
             uri strip_prefix /db-admin
             reverse_proxy pgweb:8081

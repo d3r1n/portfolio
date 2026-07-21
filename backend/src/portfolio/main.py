@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 from pydantic import BaseModel
 
-from .deps import get_client_session, get_config
+from .deps import get_client_session, get_config, get_redis
 from .lib.database import init_db
 from .lib.util.logger import setup_logging
 from .routers import auth_router, books_router, projects_router, spotify_router
@@ -14,6 +14,7 @@ from .routers import auth_router, books_router, projects_router, spotify_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 	await get_client_session.init()
+	get_redis()  # constructs eagerly so a malformed REDIS_URL fails fast at startup
 	setup_logging()
 
 	logger.info("Initializing database...")
@@ -23,6 +24,7 @@ async def lifespan(app: FastAPI):
 	yield
 
 	await get_client_session.close()
+	await get_redis().aclose()
 
 
 config = get_config()

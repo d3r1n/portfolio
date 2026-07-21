@@ -3,7 +3,8 @@ import { browser } from '$app/environment';
 class ThemeStore {
 	// Initialize from localStorage if in browser, otherwise default to light
 	current = $state<'light' | 'dark'>(
-		(browser && (localStorage.getItem('theme') as 'light' | 'dark')) || 'light'
+		(browser && (localStorage.getItem('theme') as 'light' | 'dark')) ||
+			'light'
 	);
 
 	private themes = {

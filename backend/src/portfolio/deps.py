@@ -3,6 +3,7 @@ from typing import Annotated
 
 from aiohttp import ClientSession
 from fastapi import Depends
+from redis.asyncio import Redis
 
 from .lib.integrations.hardcover_api import HardcoverApi
 from .lib.integrations.spotify_api import SpotifyApi
@@ -36,6 +37,15 @@ class ClientSessionManager:
 
 
 get_client_session = ClientSessionManager()
+
+
+# Redis connection (rate limiter's hot path — counters and the live blacklist cache).
+# Unlike aiohttp's ClientSession, redis.asyncio.Redis connects lazily on first command
+# and doesn't need a running event loop to construct, so a plain lru_cache singleton
+# (same pattern as the API clients below) is enough — no init/close state machine needed.
+@lru_cache
+def get_redis() -> Redis:
+	return Redis.from_url(load_config().redis_url, decode_responses=True)
 
 
 @lru_cache

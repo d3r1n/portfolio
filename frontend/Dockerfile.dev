@@ -1,12 +1,12 @@
-FROM oven/bun:1.3-slim
+FROM denoland/deno:alpine-2.9.3
 
 WORKDIR /app
 
 # Copy dependency files first for caching
-COPY package.json bun.lock ./
+COPY package.json deno.lock ./
 
 # Install dependencies
-RUN bun install --frozen-lockfile
+RUN deno install --frozen
 
 # Copy the rest of your frontend source code
 COPY . .
@@ -16,4 +16,4 @@ EXPOSE 5173
 ENV DEV_ENV=docker
 
 # Vite needs --host to accept connections from the Caddy proxy
-CMD ["bun", "run", "dev", "--", "--host", "0.0.0.0"]
+CMD ["deno", "task", "dev", "--", "--host", "0.0.0.0"]
