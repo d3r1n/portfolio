@@ -1,30 +1,20 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { BookOpen } from '@lucide/svelte';
 	import { currentlyReadingBooks, type HardcoverBook } from '$lib/api';
+	import { polledResource } from '$lib/utils/polled-resource.svelte';
 
-	const REFRESH_INTERVAL_MS = 60_000;
-
-	let bookData = $state<HardcoverBook | null>(null);
-	let loading = $state(true);
-
-	async function fetchBook() {
+	async function fetchBook(): Promise<HardcoverBook | null> {
 		const { data, error, response } = await currentlyReadingBooks();
 		if (error) console.error('Error fetching book data:', error);
 
 		// A 204 means there's simply no active book right now — not an error.
-		bookData = response?.status === 200 ? (data ?? null) : null;
-		loading = false;
+		return response?.status === 200 ? (data ?? null) : null;
 	}
 
-	onMount(() => {
-		fetchBook();
-		const interval = setInterval(fetchBook, REFRESH_INTERVAL_MS);
-		return () => clearInterval(interval);
-	});
+	const book = polledResource(fetchBook, 60_000);
 </script>
 
-{#if loading}
+{#if book.loading}
 	<div
 		class="outline-base-content/10 flex items-center gap-4 rounded-sm p-3 outline-2"
 	>
@@ -35,28 +25,28 @@
 			<div class="skeleton h-3 w-2/3"></div>
 		</div>
 	</div>
-{:else if bookData}
+{:else if book.data}
 	<a
-		href={bookData.link}
+		href={book.data.link}
 		target="_blank"
 		rel="noopener noreferrer"
-		class="outline-base-content/10 hover:bg-base-content/5 flex items-center gap-4 rounded-sm p-3 outline-2 transition"
+		class="outline-base-content/10 hover:bg-base-content/5 flex gap-4 rounded-sm p-3 outline-2 transition"
 	>
 		<div
-			class="relative h-16 w-12 shrink-0 overflow-hidden rounded-sm shadow-sm transition hover:scale-105"
-			style={bookData.image_dominant_color
-				? `background-color: ${bookData.image_dominant_color};`
+			class="relative aspect-2/3 shrink-0 overflow-hidden rounded-sm shadow-sm transition hover:scale-105"
+			style={book.data.image_dominant_color
+				? `background-color: ${book.data.image_dominant_color};`
 				: undefined}
 		>
-			{#if bookData.image_url}
+			{#if book.data.image_url}
 				<img
-					src={bookData.image_url}
-					alt={bookData.title}
-					class="h-full w-full object-cover"
+					src={book.data.image_url}
+					alt={book.data.title}
+					class="absolute inset-0 h-full w-full object-cover"
 				/>
 			{:else}
 				<div
-					class="bg-base-content/10 flex h-full w-full items-center justify-center"
+					class="bg-base-content/10 absolute inset-0 flex items-center justify-center"
 				>
 					<BookOpen size={16} class="text-base-content/50" />
 				</div>
@@ -75,28 +65,28 @@
 			<div
 				class="font-heading text-base-content truncate text-sm font-semibold"
 			>
-				{bookData.title}
+				{book.data.title}
 			</div>
 			<div class="font-body text-base-content/70 truncate text-xs">
-				{bookData.author}
-				{#if bookData.pages !== null && bookData.pages !== undefined}
+				{book.data.author}
+				{#if book.data.pages !== null && book.data.pages !== undefined}
 					<span class="text-base-content/50">
-						• {bookData.pages} pages</span
+						• {book.data.pages} pages</span
 					>
 				{/if}
 			</div>
 
-			{#if bookData.progress !== null && bookData.progress !== undefined}
+			{#if book.data.progress !== null && book.data.progress !== undefined}
 				<div class="mt-1 flex items-center gap-2">
 					<progress
 						class="progress progress-neutral h-1.5 w-full"
-						value={bookData.progress}
+						value={book.data.progress}
 						max="100"
 					></progress>
 					<span
 						class="font-body text-base-content/50 w-9 text-[10px]"
 					>
-						{Math.round(bookData.progress)}%
+						{Math.round(book.data.progress)}%
 					</span>
 				</div>
 			{/if}
