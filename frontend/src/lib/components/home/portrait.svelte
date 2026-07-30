@@ -1,15 +1,17 @@
 <script lang="ts">
 	import climber from '$lib/assets/climber.jpg';
 	import {
-		Clock,
 		GitBranch,
-		Link,
+		Link as LinkIcon,
 		Rss,
-		Sun,
-		MapPin,
 		type LucideIcon
 	} from '@lucide/svelte';
+	import type { CurrentLocationWeather } from '$lib/api';
 	import Navbar from '../navbar.svelte';
+	import WeatherWidget from './weather-widget.svelte';
+
+	let { weather }: { weather: Promise<CurrentLocationWeather | null> } =
+		$props();
 
 	type Link = {
 		url: string;
@@ -25,7 +27,7 @@
 		},
 		{
 			url: 'https://linkedin.com/in/d3r1n',
-			icon: Link,
+			icon: LinkIcon,
 			tooltip: 'LinkedIn'
 		},
 		{
@@ -40,15 +42,15 @@
 	<div
 		class="outline-base-300 col-span-1 row-span-full overflow-hidden rounded-sm outline-2 outline-offset-2"
 	>
-		<img src={climber} alt="" class="h-full object-cover" />
+		<img src={climber} alt="Derin Önder Eren" class="h-full object-cover" />
 	</div>
 
 	<Navbar class="col-span-2 row-span-1" />
 
 	<div class="col-span-2 row-span-3 flex flex-col gap-2">
-		<div class="font-heading text-base-content text-2xl font-medium">
+		<h1 class="font-heading text-base-content text-2xl font-medium">
 			Derin Önder EREN
-		</div>
+		</h1>
 
 		<div class="font-body text-base-content/80 flex gap-2 tracking-wide">
 			<span> stoic </span>
@@ -85,13 +87,7 @@
 				Enim sed ad fuga incidunt vel sed eos. Numquam voluptatibus
 				impedit numquam iusto quisquam amet.
 			</p>
-			<span
-				class="font-body text-base-content/50 flex items-center gap-2 text-xs"
-			>
-				<MapPin size={12} class="inline-block" /> Istanbul, Turkey
-				<Clock size={12} class="inline-block" /> 14:30 GMT+3
-				<Sun size={12} class="inline-block" /> 28°C
-			</span>
+			<WeatherWidget {weather} />
 		</div>
 	</div>
 </div>

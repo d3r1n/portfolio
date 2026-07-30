@@ -1,25 +1,21 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { featuredProjects, type FeaturedProject } from '$lib/api';
+	import type { FeaturedProject } from '$lib/api';
 
-	let { limit = 2, class: className = '' } = $props<{
-		projects?: FeaturedProject[];
+	let {
+		projects,
+		limit = 2,
+		class: className = ''
+	}: {
+		projects: FeaturedProject[] | null;
 		limit?: number;
 		class?: string;
-	}>();
+	} = $props();
 
-	let projects = $state<FeaturedProject[] | null>(null);
 	let visibleProjects = $derived(projects ? projects.slice(0, limit) : []);
-
-	onMount(async () => {
-		const { data, error } = await featuredProjects({ query: { limit } });
-		if (error) console.error('Error fetching featured projects:', error);
-		projects = data ?? null;
-	});
 </script>
 
 {#if projects}
-	<section class={`${className} flex flex-col gap-4 rounded-sm p-3`}>
+	<section class={`${className} flex flex-col gap-4 rounded-sm`}>
 		<div class="flex items-end justify-between gap-4">
 			<div class="flex flex-col gap-1">
 				<span
