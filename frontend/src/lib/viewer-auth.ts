@@ -11,26 +11,21 @@
  * This file intentionally lives outside `src/lib/api/`: hey-api regenerates
  * that directory from scratch (`output.clean: true`) on every dev/build run,
  * so anything hand-written in there would be deleted.
+ *
+ * Browser-only: the server has its own equivalent cache in
+ * `lib/server/api-client.ts` since this module's state is never shared with
+ * the Node process (and the viewer token carries no per-user claims, so
+ * caching it independently on each side is safe).
  */
 import { client } from '$lib/api/client.gen';
 import { generateViewerSessionAuth } from '$lib/api';
+import { expiryFromJwt } from '$lib/utils/jwt';
 
 // Refresh a little ahead of expiry so an in-flight request never races the server's clock.
 const EXPIRY_SKEW_MS = 30_000;
 
 let cachedToken: { value: string; expiresAt: number } | null = null;
 let pendingRefresh: Promise<string> | null = null;
-
-/** Reads `exp` off the JWT itself so our cache mirrors the server's expiry exactly. */
-function expiryFromJwt(token: string): number {
-	const payload = token.split('.')[1] ?? '';
-	const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
-	const json =
-		typeof atob === 'function'
-			? atob(base64)
-			: Buffer.from(base64, 'base64').toString('utf-8');
-	return (JSON.parse(json) as { exp: number }).exp * 1000;
-}
 
 async function refreshToken(): Promise<string> {
 	const { data } = await generateViewerSessionAuth({
