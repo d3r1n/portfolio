@@ -5,7 +5,7 @@
 
 	import { theme } from '$lib/utils/theme-toggle.svelte';
 
-	let props = $props();
+	let { class: className = '' }: { class?: string } = $props();
 
 	type Page = {
 		name: string;
@@ -72,8 +72,8 @@
 
 <div
 	id="navbar"
-	class={props.class +
-		'font-heading text-base-content/80 flex w-full content-start items-center gap-4 self-start text-xl'}
+	class={className +
+		' font-heading text-base-content/80 flex w-full content-start items-center gap-4 self-start text-xl'}
 >
 	{#each navPages as navPage}
 		<span>
