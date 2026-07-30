@@ -3,6 +3,11 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
+    environment:
+      # Lets `load` functions reach the backend directly (bypassing Caddy)
+      # and skip the per-IP rate limiter as a trusted internal caller.
+      - BACKEND_INTERNAL_URL=http://backend:5000
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY}
     volumes:
       - ./frontend:/app:z
       - /app/node_modules # Do not let host modules overwrite container modules
