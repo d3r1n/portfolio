@@ -84,10 +84,9 @@ async function run() {
 	await createClient({
 		input: cleanedSpec,
 		output: {
-			path: './src/lib/api',
-			tsConfigPath: null
+			path: './src/lib/api'
 		},
-		plugins: ['@hey-api/client-fetch']
+		plugins: ['@hey-api/client-fetch', '@hey-api/sdk']
 	});
 
 	console.log('✨ Client generated successfully in ./src/lib/api');

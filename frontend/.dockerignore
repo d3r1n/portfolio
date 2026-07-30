@@ -20,3 +20,6 @@ bun-debug.log*
 # Docker artifacts
 Dockerfile*
 .dockerignore
+
+# pnpm
+.pnpm-store
