@@ -1,4 +1,4 @@
-:80 {
+localhost:80 {
     reverse_proxy * frontend:5173
 
     handle /api/* {
