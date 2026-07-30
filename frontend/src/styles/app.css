@@ -1,9 +1,32 @@
 @import 'tailwindcss';
 
+/* 'daisyui/index.js' (not bare 'daisyui'): Vite 8.0.10+ has a resolution
+   regression where the bare specifier picks up daisyui's legacy `browser`
+   field (daisyui.css) instead of its JS plugin entry, breaking `@plugin`.
+   See https://github.com/saadeghi/daisyui/issues/4503. */
 @plugin 'daisyui/index.js' {
 	themes:
 		wireframe --default,
-		black --prefersdark;
+		black --prefers-dark;
+}
+
+/* Extend daisyui's own `accent` role on both built-in themes (daisyui merges
+   these onto the built-in theme of the same name) instead of inventing a
+   separate custom color. Any accent-* class — btn-accent, text-accent,
+   border-accent, ... — picks this blue up automatically, everywhere, in
+   both themes. */
+@plugin 'daisyui/theme' {
+	name: 'wireframe';
+	default: true;
+	--color-accent: oklch(58% 0.18 255);
+	--color-accent-content: oklch(97% 0.02 255);
+}
+
+@plugin 'daisyui/theme' {
+	name: 'black';
+	prefersdark: true;
+	--color-accent: oklch(58% 0.18 255);
+	--color-accent-content: oklch(97% 0.02 255);
 }
 
 @theme {
