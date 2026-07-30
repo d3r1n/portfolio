@@ -1,134 +1,79 @@
-from typing import Annotated
+from typing import Any
 
 from aiohttp import ClientSession
 from loguru import logger
-from pydantic import ConfigDict, Field, ValidationError, validate_call
+from pydantic import ValidationError
 
 from ...core.config import Config
-from .schemas import CurrentWeather
+from .. import UpstreamError
+from .schemas import CurrentWeather, Geocoding
 
-_STATUS_OK = 200
 
-
-class WeatherError(Exception):
-	"""Errors related to the OpenWeatherMap API."""
-
-	def __init__(self, *args) -> None:
-		super().__init__(*args)
+class WeatherError(UpstreamError):
+	service = "OpenWeatherMap"
 
 
 class OpenWeatherApi:
-	"""A client for interacting with the OpenWeatherMap "Current Weather Data" API.
+	"""Client for OpenWeatherMap, bound to the app-wide aiohttp session.
 
-	Given a coordinate, fetches the current weather conditions there. Authentication
-	is handled via an API key provided in the configuration.
+	Resolves location names to coordinates and fetches current conditions.
+	Authentication is an API key from the configuration.
 	"""
 
-	BASE_URL: str = "https://api.openweathermap.org/"
-	CURRENT_WEATHER_ENDPOINT: str = "data/4.0/onecall/current"
-	GEOCODING_ENDPOINT: str = "geo/1.0/direct"
+	BASE_URL = "https://api.openweathermap.org"
 
-	def __init__(self, config: Config) -> None:
-		self._API_KEY: str = config.openweathermap.api_key
+	def __init__(self, config: Config, session: ClientSession) -> None:
+		self._session = session
+		self._api_key = config.openweathermap.api_key
 
-	async def get_coordinates_from_location_name(
-		self, session: ClientSession, location_name: str
-	) -> tuple[float, float] | None:
-		"""Fetch the coordinates (latitude, longitude) for a given location name.
-
-		Args:
-			session (ClientSession): aiohttp client session for making requests
-			location_name (str): The name of the location to look up
-
-		Returns:
-			tuple[float, float] | None: A tuple containing (latitude, longitude)
-
-		Raises:
-			WeatherError: if the OpenWeatherMap API returns anything except `200 (OK)`
-		"""
-		if not self._API_KEY:
+	async def _get(self, path: str, **params: Any) -> Any:
+		"""GET an API path with the key attached. Returns None if no key is configured."""
+		if not self._api_key:
 			logger.warning("OpenWeatherMap API key is not configured. Skipping request.")
 			return None
 
-		params = {
-			"q": location_name,
-			"limit": 1,  # Only need the first result
-			"appid": self._API_KEY,
-		}
+		response = await self._session.get(f"{self.BASE_URL}{path}", params={**params, "appid": self._api_key})
 
-		response = await session.get(f"{self.BASE_URL}{self.GEOCODING_ENDPOINT}", params=params)
+		if response.status != 200:
+			raise WeatherError(await response.text(), status_code=response.status)
 
-		if response.status != _STATUS_OK:
-			raise WeatherError({"status_code": response.status, "message": await response.text()})
+		return await response.json()
 
-		data = await response.json()
-
-		if not data:
-			logger.warning(f"No coordinates found for location name: {location_name}")
+	async def get_coordinates_from_location_name(self, location_name: str) -> Geocoding | None:
+		"""Resolve a location name to coordinates via the geocoding endpoint."""
+		data = await self._get("/geo/1.0/direct", q=location_name, limit=1)
+		if data is None:
 			return None
-
-		latitude = data[0]["lat"]
-		longitude = data[0]["lon"]
-
-		return latitude, longitude
-
-	@validate_call(config=ConfigDict(arbitrary_types_allowed=True))
-	async def get_current_weather(
-		self,
-		session: ClientSession,
-		*,  # pydantic keyword only
-		latitude: Annotated[float, Field(ge=-90, le=90)],
-		longitude: Annotated[float, Field(ge=-180, le=180)],
-	) -> CurrentWeather | None:
-		"""Fetch the current weather conditions for a coordinate.
-
-		Args:
-			session (ClientSession): aiohttp client session for making requests
-			latitude (float): -90 <= latitude <= 90
-			longitude (float): -180 <= longitude <= 180
-
-		Returns:
-			CurrentWeather | None: the current conditions, or None if no API key is configured.
-
-		Raises:
-			WeatherError: if the OpenWeatherMap API returns anything except `200 (OK)`
-		"""
-		if not self._API_KEY:
-			logger.warning("OpenWeatherMap API key is not configured. Skipping request.")
-			return None
-
-		params = {
-			"lat": latitude,
-			"lon": longitude,
-			"appid": self._API_KEY,
-			"units": "metric",  # Celsius, meters/sec wind speed
-		}
-
-		response = await session.get(self.BASE_URL, params=params)
-
-		if response.status != _STATUS_OK:
-			raise WeatherError({"status_code": response.status, "message": await response.text()})
-
-		json_data = await response.json()
-		logger.debug(f"OpenWeatherMap API response data: {json_data}")
 
 		try:
-			weather = json_data["weather"][0]
-			main = json_data["main"]
-			wind = json_data.get("wind", {})
+			return Geocoding(**data[0])
+		except (KeyError, IndexError, ValidationError) as exc:
+			logger.error(f"Failed parsing OpenWeatherMap geocoding response: {exc}")
+			raise WeatherError(f"OpenWeatherMap geocoding response validation failed: {exc}") from exc
+
+	async def get_current_weather(self, *, latitude: float, longitude: float) -> CurrentWeather | None:
+		"""Current conditions at a coordinate (metric units), or None if no API key is configured."""
+		data = await self._get("/data/2.5/weather", lat=latitude, lon=longitude, units="metric")
+		if data is None:
+			return None
+
+		logger.debug(f"OpenWeatherMap API response data: {data}")
+
+		try:
+			weather = data["weather"][0]
+			main = data["main"]
 
 			return CurrentWeather(
 				temperature=main["temp"],
 				feels_like=main["feels_like"],
 				condition=weather["main"],
 				description=weather["description"],
-				icon=weather["icon"],
+				weather_id=weather["id"],
 				humidity=main["humidity"],
-				wind_speed=wind.get("speed", 0.0),
-				location_name=json_data.get("name") or "Unknown",
+				wind_speed=data["wind"]["speed"],
+				dt=data["dt"],
+				timezone=data["timezone"],
 			)
 		except (KeyError, IndexError, ValidationError) as exc:
-			logger.error(f"Failed parsing OpenWeatherMap response. Error: {exc}")
-			raise WeatherError(
-				{"status_code": _STATUS_OK, "message": f"OpenWeatherMap response validation failed: {exc}"}
-			) from exc
+			logger.error(f"Failed parsing OpenWeatherMap response: {exc}")
+			raise WeatherError(f"OpenWeatherMap response validation failed: {exc}") from exc
