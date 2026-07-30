@@ -4,7 +4,7 @@ from typing import Any, Literal, TypedDict, cast
 
 import jwt
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer, OAuth2PasswordBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from ..core.config import load_config
 
@@ -63,11 +63,6 @@ def require_viewer(credentials: HTTPAuthorizationCredentials | None = Depends(vi
 
 	# credentials.credentials contains the raw JWT string extracted by HTTPBearer
 	verify_viewer_token(credentials.credentials)
-
-
-# We use the native OAuth2PasswordBearer flow for the admin dashboard.
-# This instructs FastAPI to read form data and configures the login UI in /docs.
-admin_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/admin-login")
 
 
 class AdminPayload(TypedDict):

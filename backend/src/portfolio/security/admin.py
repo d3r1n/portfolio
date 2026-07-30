@@ -1,15 +1,12 @@
 import uuid
-from datetime import datetime, timezone
 
 import jwt
 from fastapi import Depends, HTTPException, Request, status
 from loguru import logger
-from sqlmodel import select
-from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..core.config import load_config
-from ..core.database import get_async_session
-from ..models import Admin, AdminSession
+from ..database import Database, get_db
+from ..database.dto import Admin
 
 config = load_config()
 
@@ -18,29 +15,9 @@ JWT_SECRET_KEY = config.security.jwt_secret_key
 JWT_ALGORITHM = config.security.jwt_algorithm
 
 
-def get_client_ip(request: Request) -> str:
-	"""
-	Safely extracts the real client IP address, accounting for the
-	upstream reverse proxy layer (Caddy).
-	"""
-	# Check the standard header Caddy sets for the original client
-	real_ip = request.headers.get("X-Real-IP")
-	if real_ip:
-		return real_ip
-
-	# Fall back to X-Forwarded-For (can be a comma-separated list: client, proxy1, proxy2)
-	forwarded_for = request.headers.get("X-Forwarded-For")
-	if forwarded_for:
-		# Grab the very first IP in the chain, which is the original client
-		return forwarded_for.split(",")[0].strip()
-
-	# local fallback if things aren't hitting the proxy during testing
-	return request.client.host if request.client else "127.0.0.1"
-
-
 async def require_admin(
 	request: Request,  # Pull raw request context to inspect headers and cookies manually
-	session: AsyncSession = Depends(get_async_session),
+	db: Database = Depends(get_db),
 ) -> Admin:
 	"""
 	Reusable dependency to protect administrative operations.
@@ -83,17 +60,9 @@ async def require_admin(
 	except (jwt.InvalidTokenError, ValueError):
 		raise credentials_exception
 
-	# Enforce the whitelist join query:
-	# Look for the admin, but ONLY if they have a matching, unexpired record in admin_sessions
-	statement = (
-		select(Admin)
-		.join(AdminSession, Admin.id == AdminSession.admin_id)  # pyright: ignore[reportArgumentType]
-		.where(Admin.id == admin_uuid)
-		.where(AdminSession.jti == jti)
-		.where(AdminSession.expires_at > datetime.now(timezone.utc))
-	)
-	result = await session.exec(statement)
-	admin = result.one_or_none()
+	# Enforce the whitelist check: the admin resolves only while a matching,
+	# unexpired record exists in admin_sessions
+	admin = await db.admins.get_by_valid_session(admin_uuid, jti)
 
 	if admin is None:
 		raise credentials_exception

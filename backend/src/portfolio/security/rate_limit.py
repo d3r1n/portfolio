@@ -5,14 +5,11 @@ from secrets import compare_digest
 from fastapi import Depends, HTTPException, Request, status
 from loguru import logger
 from redis.asyncio import Redis
-from sqlmodel import select
-from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..core.config import load_config
-from ..core.database import get_async_session
+from ..core.http import get_client_ip
+from ..database import Database, get_database
 from ..deps import get_redis
-from ..models import BlacklistedIp
-from .admin import get_client_ip
 
 config = load_config()
 
@@ -40,17 +37,13 @@ def _is_internal_caller(api_key: str | None) -> bool:
 	return compare_digest(api_key, internal_key)
 
 
-async def _persist_blacklist(session: AsyncSession, ip: str, reason: str, expires_at: datetime) -> None:
+async def _persist_blacklist(db: Database, ip: str, reason: str, expires_at: datetime) -> None:
 	"""Durable record of the block, so it survives a Redis restart and is auditable later.
 	Redis remains the source of truth for *enforcement* — this is just the paper trail."""
-	existing = (await session.exec(select(BlacklistedIp).where(BlacklistedIp.ip_address == ip))).first()
-	if existing:
-		existing.reason = reason
-		existing.expires_at = expires_at
-		session.add(existing)
-	else:
-		session.add(BlacklistedIp(ip_address=ip, reason=reason, expires_at=expires_at))
-	await session.commit()
+	# Short-lived connection scope: the limiter's hot path never touches the
+	# database, so we only borrow a connection for this one write.
+	async with db.session():
+		await db.blacklist.upsert(ip_address=ip, reason=reason, expires_at=expires_at)
 
 
 def rate_limit(requests_per_minute: int | None = None):
@@ -75,7 +68,6 @@ def rate_limit(requests_per_minute: int | None = None):
 
 	async def dependency(
 		request: Request,
-		session: AsyncSession = Depends(get_async_session),
 		redis: Redis = Depends(get_redis),
 	) -> None:
 		ip = get_client_ip(request)
@@ -110,13 +102,14 @@ def rate_limit(requests_per_minute: int | None = None):
 		if count > blacklist_threshold:
 			expires_at = datetime.now(timezone.utc) + timedelta(minutes=config.security.auto_blacklist_minutes)
 			await redis.set(_blacklist_key(ip), "1", ex=config.security.auto_blacklist_minutes * 60)
-			await _persist_blacklist(session, ip, reason=f"Exceeded {limit}/min on {endpoint}", expires_at=expires_at)
+			await _persist_blacklist(
+				get_database(), ip, reason=f"Exceeded {limit}/min on {endpoint}", expires_at=expires_at
+			)
 			raise HTTPException(
 				status_code=status.HTTP_429_TOO_MANY_REQUESTS,
 				detail="Too many requests — IP has been temporarily blocked",
 			)
 
-		await session.commit()
 		raise HTTPException(
 			status_code=status.HTTP_429_TOO_MANY_REQUESTS,
 			detail="Rate limit exceeded",

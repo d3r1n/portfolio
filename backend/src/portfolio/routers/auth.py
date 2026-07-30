@@ -2,19 +2,17 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlmodel import select
-from sqlmodel.ext.asyncio.session import AsyncSession
 
 from portfolio.security.jwt import JWT_ADMIN_TOKEN_EXPIRE_MINUTES
 
 from ..core.config import load_config
-from ..core.database import get_async_session
-from ..models import Admin, AdminSession
+from ..core.http import get_client_ip
+from ..database import DatabaseDep
+from ..database.dto import Admin
 from ..schemas.auth import TokenResponse
 from ..security import (
 	create_admin_token,
 	create_viewer_token,
-	get_client_ip,
 	rate_limit,
 	require_admin,
 	verify_password,
@@ -47,17 +45,14 @@ SECONDS_PER_MINUTE = 60  # Constant for cookie expiration
 async def admin_login(
 	request: Request,
 	response: Response,
+	db: DatabaseDep,
 	form_data: OAuth2PasswordRequestForm = Depends(),
-	session: AsyncSession = Depends(get_async_session),
 ) -> dict[str, str]:
 	"""
 	Processes administrative logins via OAuth2 standard password flow.
 	Verifies credentials against Postgres and yields an elevated access token.
 	"""
-	# Search for the admin user
-	statement = select(Admin).where(Admin.user == form_data.username)
-	result = await session.exec(statement)
-	admin = result.one_or_none()
+	admin = await db.admins.get_by_username(form_data.username)
 
 	# Prevent timing attacks by checking fake hashes if user doesn't exist,
 	# or handle verification cleanly
@@ -71,16 +66,13 @@ async def admin_login(
 	# Return the token matching standard OAuth2 response layouts
 	token, payload = create_admin_token(str(admin.id))
 
-	admin_session = AdminSession(
+	await db.admins.create_session(
 		admin_id=admin.id,
 		jti=payload["jti"],
-		user_agent=response.headers.get("user-agent", "unknown"),
+		user_agent=request.headers.get("user-agent", "unknown"),
 		ip_address=get_client_ip(request),
 		expires_at=datetime.fromtimestamp(payload["exp"], tz=timezone.utc),
 	)
-
-	session.add(admin_session)
-	await session.commit()
 
 	response.set_cookie(
 		key="admin_token",
