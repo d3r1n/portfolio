@@ -89,6 +89,10 @@ class BlacklistRepository(ABC):
 		"""Insert or refresh the durable audit record for a blocked IP."""
 		...
 
+	async def all(self) -> list[dto.BlacklistedIp]:
+		"""Return all currently blocked IPs, ordered by expiration time."""
+		...
+
 
 class Database(ABC):
 	"""Facade aggregating the repositories plus connection lifecycle."""

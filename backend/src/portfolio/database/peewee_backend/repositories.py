@@ -130,3 +130,7 @@ class PeeweeBlacklistRepository(BlacklistRepository):
 			)
 			.aexecute()
 		)
+
+	async def all(self) -> list[dto.BlacklistedIp]:
+		rows = await models.BlacklistedIp.select().order_by(models.BlacklistedIp.expires_at.desc()).aexecute()
+		return [dto.BlacklistedIp.model_validate(row) for row in rows]
