@@ -93,6 +93,10 @@ class BlacklistRepository(ABC):
 		"""Return all currently blocked IPs, ordered by expiration time."""
 		...
 
+	async def all_unexpired(self) -> list[dto.BlacklistedIp]:
+		"""Return all currently blocked IPs that haven't expired, ordered by expiration time."""
+		...
+
 
 class Database(ABC):
 	"""Facade aggregating the repositories plus connection lifecycle."""

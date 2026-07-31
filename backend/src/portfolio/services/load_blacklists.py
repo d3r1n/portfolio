@@ -9,7 +9,7 @@ from ..database import Database
 
 async def load_blacklists(db: Database, redis: Redis = Depends(get_redis)) -> None:
 	# Load blacklists from the database and populate redis cache
-	blacklists = await db.blacklist.all()
+	blacklists = await db.blacklist.all_unexpired()
 
 	# if failed to load blacklists, log the error and continue
 	if not blacklists:
