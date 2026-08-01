@@ -11,7 +11,13 @@ from typing import Any, Mapping, Sequence
 from playhouse.pwasyncio import AsyncDatabaseMixin
 
 from .. import dto
-from ..interface import AdminRepository, BlacklistRepository, LocationRepository, ProjectRepository
+from ..interface import (
+	AdminRepository,
+	BlacklistRepository,
+	BlogPostRepository,
+	LocationRepository,
+	ProjectRepository,
+)
 from . import models
 
 
@@ -143,3 +149,68 @@ class PeeweeBlacklistRepository(BlacklistRepository):
 			.aexecute()
 		)
 		return [dto.BlacklistedIp.model_validate(row) for row in rows]
+
+
+class PeeweeBlogPostRepository(BlogPostRepository):
+	def __init__(self, db: AsyncDatabaseMixin):
+		self._db = db
+
+	async def list(self, *, status: str | None = None, limit: int = 20, offset: int = 0) -> list[dto.BlogPost]:
+		query = models.BlogPost.select().order_by(models.BlogPost.created_at.desc())
+		if status is not None:
+			query = query.where(models.BlogPost.status == status)
+		rows = await query.limit(limit).offset(offset).aexecute()
+		return [dto.BlogPost.model_validate(row) for row in rows]
+
+	async def list_published(self, *, limit: int = 20, offset: int = 0) -> list[dto.BlogPost]:
+		return await self.list(status="published", limit=limit, offset=offset)
+
+	async def count(self, *, status: str | None = None) -> int:
+		query = models.BlogPost.select()
+		if status is not None:
+			query = query.where(models.BlogPost.status == status)
+		return await self._db.count(query)
+
+	async def get(self, post_id: uuid.UUID) -> dto.BlogPost | None:
+		row = await models.BlogPost.aget_or_none(models.BlogPost.id == post_id)
+		return dto.BlogPost.model_validate(row) if row else None
+
+	async def get_by_slug(self, slug: str) -> dto.BlogPost | None:
+		row = await models.BlogPost.aget_or_none(models.BlogPost.slug == slug)
+		return dto.BlogPost.model_validate(row) if row else None
+
+	async def slug_exists(self, slug: str) -> bool:
+		return bool(await self._db.exists(models.BlogPost.select().where(models.BlogPost.slug == slug)))
+
+	async def create(self, data: dto.BlogPostData, *, slug: str, reading_time_minutes: int) -> dto.BlogPost:
+		row = await models.BlogPost.acreate(
+			**data.model_dump(mode="json"), slug=slug, reading_time_minutes=reading_time_minutes
+		)
+		return dto.BlogPost.model_validate(row)
+
+	async def update(self, post_id: uuid.UUID, changes: Mapping[str, Any]) -> dto.BlogPost | None:
+		modified = await (
+			models.BlogPost.update(**changes, updated_at=models.utcnow())
+			.where(models.BlogPost.id == post_id)
+			.aexecute()
+		)
+		if not modified:
+			return None
+		return await self.get(post_id)
+
+	async def set_status(self, post_id: uuid.UUID, status: str) -> dto.BlogPost | None:
+		post = await self.get(post_id)
+		if post is None:
+			return None
+
+		changes: dict[str, Any] = {"status": status, "updated_at": models.utcnow()}
+		if status == "published" and post.published_at is None:
+			changes["published_at"] = models.utcnow()
+
+		modified = await models.BlogPost.update(**changes).where(models.BlogPost.id == post_id).aexecute()
+		if not modified:
+			return None
+		return await self.get(post_id)
+
+	async def delete(self, post_id: uuid.UUID) -> bool:
+		return bool(await models.BlogPost.delete().where(models.BlogPost.id == post_id).aexecute())

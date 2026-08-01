@@ -8,8 +8,9 @@ can't ripple outside the `portfolio.database` package.
 
 import uuid
 from datetime import datetime
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl, field_validator
 
 
 class _Record(BaseModel):
@@ -93,3 +94,39 @@ class BlacklistedIp(_Record):
 	reason: str
 	created_at: datetime
 	expires_at: datetime
+
+
+class BlogPost(_Record):
+	# identifiers
+	id: uuid.UUID
+	slug: str
+
+	# content
+	title: str
+	summary: str
+	content: str
+
+	# metadata
+	status: Literal["draft", "published", "archived"]
+
+	# seo
+	reading_time_minutes: int
+	meta_title: str | None = None
+	meta_description: str | None = None
+	cover_img: HttpUrl | None = None
+
+	# timestamps
+	created_at: datetime
+	updated_at: datetime
+	published_at: datetime | None = None
+
+
+class BlogPostData(BaseModel):
+	"""Input payload for creating/updating a post's content (id/slug/status/timestamps are the store's job)."""
+
+	title: str = Field(min_length=1, max_length=256)
+	summary: str = Field(min_length=1, max_length=512)
+	content: str = Field(min_length=1)
+	meta_title: str | None = Field(default=None, max_length=70)
+	meta_description: str | None = Field(default=None, max_length=160)
+	cover_img: HttpUrl | None = None

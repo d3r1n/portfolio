@@ -98,6 +98,52 @@ class BlacklistRepository(ABC):
 		...
 
 
+class BlogPostRepository(ABC):
+	@abstractmethod
+	async def list(
+		self, *, status: str | None = None, limit: int = 20, offset: int = 0
+	) -> list[dto.BlogPost]:
+		"""All posts, optionally filtered by status, newest first. Admin-facing."""
+		...
+
+	@abstractmethod
+	async def list_published(self, *, limit: int = 20, offset: int = 0) -> list[dto.BlogPost]:
+		"""Only published posts, newest first. Public-facing."""
+		...
+
+	@abstractmethod
+	async def count(self, *, status: str | None = None) -> int: ...
+
+	@abstractmethod
+	async def get(self, post_id: uuid.UUID) -> dto.BlogPost | None: ...
+
+	@abstractmethod
+	async def get_by_slug(self, slug: str) -> dto.BlogPost | None: ...
+
+	@abstractmethod
+	async def slug_exists(self, slug: str) -> bool: ...
+
+	@abstractmethod
+	async def create(self, data: dto.BlogPostData, *, slug: str, reading_time_minutes: int) -> dto.BlogPost:
+		"""Create a post; always starts in "draft" status."""
+		...
+
+	@abstractmethod
+	async def update(self, post_id: uuid.UUID, changes: Mapping[str, Any]) -> dto.BlogPost | None:
+		"""Apply a partial update; returns the fresh row or None if it doesn't exist."""
+		...
+
+	@abstractmethod
+	async def set_status(
+		self, post_id: uuid.UUID, status: str
+	) -> dto.BlogPost | None:
+		"""Transition status; sets published_at the first time a post becomes "published"."""
+		...
+
+	@abstractmethod
+	async def delete(self, post_id: uuid.UUID) -> bool: ...
+
+
 class Database(ABC):
 	"""Facade aggregating the repositories plus connection lifecycle."""
 
@@ -116,6 +162,10 @@ class Database(ABC):
 	@property
 	@abstractmethod
 	def blacklist(self) -> BlacklistRepository: ...
+
+	@property
+	@abstractmethod
+	def blog_posts(self) -> BlogPostRepository: ...
 
 	@abstractmethod
 	async def init(self) -> None:

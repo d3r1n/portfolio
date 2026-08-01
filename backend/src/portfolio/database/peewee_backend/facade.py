@@ -10,6 +10,7 @@ from . import models
 from .repositories import (
 	PeeweeAdminRepository,
 	PeeweeBlacklistRepository,
+	PeeweeBlogPostRepository,
 	PeeweeLocationRepository,
 	PeeweeProjectRepository,
 )
@@ -24,6 +25,7 @@ class PeeweeDatabase(Database):
 		self._projects = PeeweeProjectRepository(self._db)
 		self._locations = PeeweeLocationRepository(self._db)
 		self._blacklist = PeeweeBlacklistRepository(self._db)
+		self._blog_posts = PeeweeBlogPostRepository(self._db)
 
 	@property
 	def admins(self) -> PeeweeAdminRepository:
@@ -40,6 +42,10 @@ class PeeweeDatabase(Database):
 	@property
 	def blacklist(self) -> PeeweeBlacklistRepository:
 		return self._blacklist
+
+	@property
+	def blog_posts(self) -> PeeweeBlogPostRepository:
+		return self._blog_posts
 
 	async def init(self) -> None:
 		async with self._db:

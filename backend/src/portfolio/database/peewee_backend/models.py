@@ -7,7 +7,7 @@ go through the `Database` facade and only ever see the DTOs in `database.dto`.
 import uuid
 from datetime import datetime, timezone
 
-from peewee import CharField, FloatField, ForeignKeyField, JSONField, TextField, UUIDField
+from peewee import CharField, FloatField, ForeignKeyField, IntegerField, JSONField, TextField, UUIDField
 from playhouse.postgres_ext import DateTimeTZField
 from playhouse.pwasyncio import AsyncModel, AsyncPostgresqlDatabase
 
@@ -118,4 +118,28 @@ class BlacklistedIp(BaseModel):
 	expires_at = DateTimeTZField(index=True)
 
 
-ALL_MODELS = [Admin, AdminSession, Project, CurrentLocation, BlacklistedIp]
+class BlogPost(BaseModel):
+	class Meta:
+		table_name = "blog_posts"
+
+	id = UUIDField(primary_key=True, default=uuid.uuid4)
+
+	slug = CharField(max_length=256, unique=True, index=True)
+
+	title = CharField(max_length=256)
+	summary = CharField(max_length=512)
+	content = TextField()
+
+	status = CharField(max_length=16, default="draft", index=True)
+
+	reading_time_minutes = IntegerField()
+	meta_title = CharField(max_length=70, null=True)
+	meta_description = CharField(max_length=160, null=True)
+	cover_img = CharField(max_length=512, null=True)
+
+	created_at = DateTimeTZField(default=utcnow)
+	updated_at = DateTimeTZField(default=utcnow)
+	published_at = DateTimeTZField(null=True)
+
+
+ALL_MODELS = [Admin, AdminSession, Project, CurrentLocation, BlacklistedIp, BlogPost]

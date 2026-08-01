@@ -1,13 +1,25 @@
 import uuid
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse
 
+from ..core.text import estimate_reading_minutes, slugify
 from ..database import DatabaseDep
-from ..database.dto import ProjectData
+from ..database.dto import BlogPostData, ProjectData
 from ..deps import OpenWeatherDep
 from ..integrations.openweather.client import WeatherError
-from ..schemas.admin import ProjectCreate, ProjectRead, ProjectUpdate, StatusMessage
+from ..schemas.admin import (
+	BlogPostCreate,
+	BlogPostListResponse,
+	BlogPostRead,
+	BlogPostStatusUpdate,
+	BlogPostUpdate,
+	ProjectCreate,
+	ProjectRead,
+	ProjectUpdate,
+	StatusMessage,
+)
 from ..schemas.location import CurrentLocationRead
 from ..security import rate_limit, require_admin
 
@@ -113,3 +125,112 @@ async def delete_project(project_id: uuid.UUID, db: DatabaseDep) -> StatusMessag
 		)
 
 	return StatusMessage(status="success", message="Project deleted successfully.")
+
+
+async def _unique_slug(db: DatabaseDep, title: str) -> str:
+	"""Slugify `title`, disambiguating with a numeric suffix on collision."""
+	base = slugify(title)
+	slug = base
+	suffix = 2
+	while await db.blog_posts.slug_exists(slug):
+		slug = f"{base}-{suffix}"
+		suffix += 1
+	return slug
+
+
+@router.get("/blog", response_model=BlogPostListResponse)
+async def list_blog_posts(
+	db: DatabaseDep,
+	post_status: Annotated[str | None, Query(alias="status")] = None,
+	limit: Annotated[int, Query(ge=1, le=100)] = 20,
+	offset: Annotated[int, Query(ge=0)] = 0,
+) -> BlogPostListResponse:
+	"""List all posts regardless of status, newest first."""
+	posts = await db.blog_posts.list(status=post_status, limit=limit, offset=offset)
+	total = await db.blog_posts.count(status=post_status)
+
+	return BlogPostListResponse(
+		items=[BlogPostRead.model_validate(post, from_attributes=True) for post in posts],
+		total=total,
+		limit=limit,
+		offset=offset,
+	)
+
+
+@router.get("/blog/{post_id}", response_model=BlogPostRead, responses={**not_found_response})
+async def get_blog_post(post_id: uuid.UUID, db: DatabaseDep) -> BlogPostRead | JSONResponse:
+	"""Get a single post by id."""
+	post = await db.blog_posts.get(post_id)
+
+	if post is None:
+		return JSONResponse(
+			status_code=status.HTTP_404_NOT_FOUND,
+			content={"status": "error", "message": "Post not found."},
+		)
+
+	return BlogPostRead.model_validate(post, from_attributes=True)
+
+
+@router.post("/blog", response_model=BlogPostRead, status_code=status.HTTP_201_CREATED)
+async def create_blog_post(payload: BlogPostCreate, db: DatabaseDep) -> BlogPostRead:
+	"""Create a new post. Always starts in "draft" status — publish separately."""
+	slug = await _unique_slug(db, payload.title)
+	reading_time_minutes = estimate_reading_minutes(payload.content)
+
+	post = await db.blog_posts.create(
+		BlogPostData(**payload.model_dump(mode="json")),
+		slug=slug,
+		reading_time_minutes=reading_time_minutes,
+	)
+
+	return BlogPostRead.model_validate(post, from_attributes=True)
+
+
+@router.patch("/blog/{post_id}", response_model=BlogPostRead, responses={**not_found_response})
+async def update_blog_post(
+	post_id: uuid.UUID, payload: BlogPostUpdate, db: DatabaseDep
+) -> BlogPostRead | JSONResponse:
+	"""Update an existing post's content. Only the fields present in the request body are changed."""
+	changes = payload.model_dump(mode="json", exclude_unset=True)
+	if "content" in changes:
+		changes["reading_time_minutes"] = estimate_reading_minutes(changes["content"])
+
+	post = await db.blog_posts.update(post_id, changes)
+
+	if post is None:
+		return JSONResponse(
+			status_code=status.HTTP_404_NOT_FOUND,
+			content={"status": "error", "message": "Post not found."},
+		)
+
+	return BlogPostRead.model_validate(post, from_attributes=True)
+
+
+@router.patch("/blog/{post_id}/status", response_model=BlogPostRead, responses={**not_found_response})
+async def set_blog_post_status(
+	post_id: uuid.UUID, payload: BlogPostStatusUpdate, db: DatabaseDep
+) -> BlogPostRead | JSONResponse:
+	"""Transition a post between draft, published, and archived."""
+	post = await db.blog_posts.set_status(post_id, payload.status)
+
+	if post is None:
+		return JSONResponse(
+			status_code=status.HTTP_404_NOT_FOUND,
+			content={"status": "error", "message": "Post not found."},
+		)
+
+	return BlogPostRead.model_validate(post, from_attributes=True)
+
+
+@router.delete("/blog/{post_id}", response_model=StatusMessage, responses={**not_found_response})
+async def delete_blog_post(post_id: uuid.UUID, db: DatabaseDep) -> StatusMessage | JSONResponse:
+	"""Delete a post."""
+	deleted = await db.blog_posts.delete(post_id)
+
+	if not deleted:
+		return JSONResponse(
+			status_code=status.HTTP_404_NOT_FOUND,
+			content={"status": "error", "message": "Post not found."},
+		)
+
+	return StatusMessage(status="success", message="Post deleted successfully.")

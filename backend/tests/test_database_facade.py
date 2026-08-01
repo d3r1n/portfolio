@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 from playhouse.pwasyncio import AsyncSqliteDatabase
 
-from portfolio.database.dto import ProjectData
+from portfolio.database.dto import BlogPostData, ProjectData
 from portfolio.database.peewee_backend import models
 from portfolio.database.peewee_backend.facade import PeeweeDatabase
 
@@ -111,3 +111,43 @@ async def test_blacklist_upsert(db: PeeweeDatabase):
 
 	row = await models.BlacklistedIp.aget(models.BlacklistedIp.ip_address == "1.2.3.4")
 	assert row.reason == "second"
+
+
+def _blog_post_data(title: str = "Hello World") -> BlogPostData:
+	return BlogPostData(title=title, summary="A test post.", content="word " * 10)
+
+
+async def test_blog_post_crud_cycle(db: PeeweeDatabase):
+	created = await db.blog_posts.create(_blog_post_data(), slug="hello-world", reading_time_minutes=1)
+	assert created.status == "draft"
+	assert created.published_at is None
+
+	fetched = await db.blog_posts.get_by_slug("hello-world")
+	assert fetched is not None and fetched.id == created.id
+
+	assert await db.blog_posts.slug_exists("hello-world") is True
+	assert await db.blog_posts.slug_exists("nope") is False
+
+	# drafts are excluded from the public feed
+	assert await db.blog_posts.list_published() == []
+
+	published = await db.blog_posts.set_status(created.id, "published")
+	assert published is not None and published.status == "published"
+	assert published.published_at is not None
+
+	first_published_at = published.published_at
+	republished = await db.blog_posts.set_status(created.id, "archived")
+	assert republished is not None and republished.status == "archived"
+	republished = await db.blog_posts.set_status(created.id, "published")
+	assert republished is not None
+	assert republished.published_at == first_published_at  # re-publish keeps the original date
+
+	listed = await db.blog_posts.list_published()
+	assert [p.id for p in listed] == [created.id]
+	assert await db.blog_posts.count(status="published") == 1
+
+	updated = await db.blog_posts.update(created.id, {"title": "New Title"})
+	assert updated is not None and updated.title == "New Title"
+
+	assert await db.blog_posts.delete(created.id) is True
+	assert await db.blog_posts.get(created.id) is None

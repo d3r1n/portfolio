@@ -44,7 +44,7 @@ reportMissingImports = "error"
 reportUnusedImport = "warning"
 reportUndefinedVariable = "error"
 
-reportUnknownMemberAccess = "none"    # Stops complaining when you do data.get("json") or library calls
+reportUnknownMemberType = "none"    # Stops complaining when you do data.get("json") or library calls
 reportUnknownArgumentType = "none"    # Stops complaining when passing external objects to functions
 reportUnknownVariableType = "none"    # Stops complaining when a library returns an untyped variable
 reportExplicitAny = "none"             # Allows you to explicitly use `Any` when necessary.

@@ -40,3 +40,48 @@ class ProjectUpdate(BaseModel):
 	href: HttpUrl | None = None
 	links: list[ProjectLink] | None = None
 	accent: str | None = Field(default=None, max_length=16)
+
+
+class BlogPostRead(BaseModel):
+	id: uuid.UUID
+	slug: str
+	title: str
+	summary: str
+	content: str
+	status: Literal["draft", "published", "archived"]
+	reading_time_minutes: int
+	meta_title: str | None = None
+	meta_description: str | None = None
+	cover_img: HttpUrl | None = None
+	created_at: datetime
+	updated_at: datetime
+	published_at: datetime | None = None
+
+
+class BlogPostCreate(BaseModel):
+	title: str = Field(min_length=1, max_length=256)
+	summary: str = Field(min_length=1, max_length=512)
+	content: str = Field(min_length=1)
+	meta_title: str | None = Field(default=None, max_length=70)
+	meta_description: str | None = Field(default=None, max_length=160)
+	cover_img: HttpUrl | None = None
+
+
+class BlogPostUpdate(BaseModel):
+	title: str | None = Field(default=None, min_length=1, max_length=256)
+	summary: str | None = Field(default=None, min_length=1, max_length=512)
+	content: str | None = Field(default=None, min_length=1)
+	meta_title: str | None = Field(default=None, max_length=70)
+	meta_description: str | None = Field(default=None, max_length=160)
+	cover_img: HttpUrl | None = None
+
+
+class BlogPostStatusUpdate(BaseModel):
+	status: Literal["draft", "published", "archived"]
+
+
+class BlogPostListResponse(BaseModel):
+	items: list[BlogPostRead]
+	total: int
+	limit: int
+	offset: int
