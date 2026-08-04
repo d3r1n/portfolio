@@ -155,7 +155,7 @@ class PeeweeBlogPostRepository(BlogPostRepository):
 	def __init__(self, db: AsyncDatabaseMixin):
 		self._db = db
 
-	async def list(self, *, status: str | None = None, limit: int = 20, offset: int = 0) -> list[dto.BlogPost]:
+	async def list_all(self, *, status: str | None = None, limit: int = 20, offset: int = 0) -> list[dto.BlogPost]:
 		query = models.BlogPost.select().order_by(models.BlogPost.created_at.desc())
 		if status is not None:
 			query = query.where(models.BlogPost.status == status)
@@ -163,13 +163,14 @@ class PeeweeBlogPostRepository(BlogPostRepository):
 		return [dto.BlogPost.model_validate(row) for row in rows]
 
 	async def list_published(self, *, limit: int = 20, offset: int = 0) -> list[dto.BlogPost]:
-		return await self.list(status="published", limit=limit, offset=offset)
+		return await self.list_all(status="published", limit=limit, offset=offset)
 
 	async def count(self, *, status: str | None = None) -> int:
 		query = models.BlogPost.select()
 		if status is not None:
 			query = query.where(models.BlogPost.status == status)
-		return await self._db.count(query)
+		count = await self._db.count(query)
+		return count or 0
 
 	async def get(self, post_id: uuid.UUID) -> dto.BlogPost | None:
 		row = await models.BlogPost.aget_or_none(models.BlogPost.id == post_id)

@@ -100,9 +100,7 @@ class BlacklistRepository(ABC):
 
 class BlogPostRepository(ABC):
 	@abstractmethod
-	async def list(
-		self, *, status: str | None = None, limit: int = 20, offset: int = 0
-	) -> list[dto.BlogPost]:
+	async def list_all(self, *, status: str | None = None, limit: int = 20, offset: int = 0) -> list[dto.BlogPost]:
 		"""All posts, optionally filtered by status, newest first. Admin-facing."""
 		...
 
@@ -134,9 +132,7 @@ class BlogPostRepository(ABC):
 		...
 
 	@abstractmethod
-	async def set_status(
-		self, post_id: uuid.UUID, status: str
-	) -> dto.BlogPost | None:
+	async def set_status(self, post_id: uuid.UUID, status: str) -> dto.BlogPost | None:
 		"""Transition status; sets published_at the first time a post becomes "published"."""
 		...
 

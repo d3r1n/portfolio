@@ -146,7 +146,7 @@ async def list_blog_posts(
 	offset: Annotated[int, Query(ge=0)] = 0,
 ) -> BlogPostListResponse:
 	"""List all posts regardless of status, newest first."""
-	posts = await db.blog_posts.list(status=post_status, limit=limit, offset=offset)
+	posts = await db.blog_posts.list_all(status=post_status, limit=limit, offset=offset)
 	total = await db.blog_posts.count(status=post_status)
 
 	return BlogPostListResponse(
@@ -187,9 +187,7 @@ async def create_blog_post(payload: BlogPostCreate, db: DatabaseDep) -> BlogPost
 
 
 @router.patch("/blog/{post_id}", response_model=BlogPostRead, responses={**not_found_response})
-async def update_blog_post(
-	post_id: uuid.UUID, payload: BlogPostUpdate, db: DatabaseDep
-) -> BlogPostRead | JSONResponse:
+async def update_blog_post(post_id: uuid.UUID, payload: BlogPostUpdate, db: DatabaseDep) -> BlogPostRead | JSONResponse:
 	"""Update an existing post's content. Only the fields present in the request body are changed."""
 	changes = payload.model_dump(mode="json", exclude_unset=True)
 	if "content" in changes:
